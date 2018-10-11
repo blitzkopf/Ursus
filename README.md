@@ -3,6 +3,7 @@ Track Oracle DDL changes in a branch in Git
 
 ## Configure daemon
 Create a config file 
+
     [GENERAL]
     SourceControlType = GIT
     LogLevel = DEBUG
@@ -24,6 +25,7 @@ Create a config file
 
 ## Create the branch 
 Do something like 
+
     git clone /code/oracle/REPO
 
     git checkout -b ursus
