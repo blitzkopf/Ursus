@@ -1,7 +1,7 @@
 CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
 
   procedure recv( sysevent out VARCHAR2,login_user out VARCHAR2,os_user out VARCHAR2,instance_num out NUMBER,database_name out VARCHAR2,
-    obj_owner out VARCHAR, obj_name out VARCHAR, obj_type out VARCHAR, sql_text out CLOB, wait_time number default null)
+    obj_owner out VARCHAR, obj_name out VARCHAR, obj_type out VARCHAR, sql_text out CLOB,rc_schema_params out sys_refcursor ,  wait_time number default null)
   AS
     l_dequeue_options    DBMS_AQ.DEQUEUE_OPTIONS_T;
     l_message_properties DBMS_AQ.MESSAGE_PROPERTIES_T;
@@ -29,7 +29,11 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
     obj_name := l_msg.obj_name;
     obj_type := l_msg.obj_type;
 
-    commit;
+    open rc_schema_params for
+      select *
+      from schema_params
+      where schema = l_msg.obj_owner;
+
   END recv;
 
   function get_ddl(p_obj_owner varchar2,p_obj_name varchar2, p_obj_type varchar2) return varchar
@@ -62,6 +66,21 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
    end if;
    return res;
   end;
+
+  function map(p_map_name varchar2, p_key varchar2,p_default_value varchar2 default null) return varchar2
+  as
+    result varchar2(50);
+  begin
+    select value into result
+    from maps
+    where map_name = p_map_name
+      and key = p_key;
+    return result;
+  exception
+    when no_data_found then
+       return p_default_value;
+  end;
+
 
 END PROCESS_DDL_EVENTS;
 /
