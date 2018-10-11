@@ -1,0 +1,9 @@
+CREATE OR REPLACE PACKAGE PROCESS_DDL_EVENTS AS
+
+  procedure recv( sysevent out VARCHAR2,login_user out VARCHAR2,os_user out VARCHAR2,instance_num out NUMBER,database_name out VARCHAR2,
+    obj_owner out VARCHAR, obj_name out VARCHAR, obj_type out VARCHAR, sql_text out CLOB,wait_time number default null);
+
+  function get_ddl(p_obj_owner varchar2,p_obj_name varchar2, p_obj_type varchar2) return varchar;
+
+END PROCESS_DDL_EVENTS;
+/
