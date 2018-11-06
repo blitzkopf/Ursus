@@ -12,6 +12,9 @@ grant create procedure to ursus;
 GRANT aq_administrator_role TO ursus;
 grant select_catalog_role to ursus;
 
+grant select on dba_objects to ursus;
+grant select on dba_views to ursus;
+
 grant execute on dbms_aqadm to ursus;
 grant execute on dbms_aq to ursus;
 

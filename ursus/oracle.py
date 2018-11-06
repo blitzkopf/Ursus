@@ -1,11 +1,10 @@
-from getpass import getpass
+from getpass import getpass,getuser
 import cx_Oracle 
 import logging
 import traceback
 from collections import namedtuple
 import re
 import pprint
-
 
 
 object_type_map = {
@@ -22,11 +21,6 @@ def rows_as_dicts(cursor):
     logging.debug("colnames:"+str(colnames))
     for row in cursor:
         yield dict(zip(colnames, row)) 
-
-def makeNamedTupleFactory(cursor):
-    columnNames = [d[0].lower() for d in cursor.description]
-    import collections
-    Row = collections.namedtuple('Row', columnNames)
 
 class DDLEvent(object):
     def __init__(self, d):
@@ -104,8 +98,6 @@ class DDLHandler:
             logging.info('No SQL statement Collected')
             logging.debug(traceback.format_exc())
         curs_schema_params =  rc_schema_params.getvalue()
-        #curs_schema_params.rowfactory = makeNamedTupleFactory(curs_schema_params)
-        #rs_schema_params =curs_schema_params.fetchall()
         rs_schema_params = []
         for row in rows_as_dicts(curs_schema_params):
             #print(row)
@@ -122,7 +114,6 @@ class DDLHandler:
             "os_user":self.os_user.getvalue(),"obj_owner":self.obj_owner.getvalue(),"obj_name": self.obj_name.getvalue(),
             "obj_type":self.obj_type.getvalue(), "schema_params":schema_params
         })
-
 
     def commit(self):
         self.con.commit()
@@ -160,4 +151,32 @@ class DDLHandler:
         #tail = [line for line in lines[-10:] if re.search('^--', line ) == None]
         #return head+tail
         #return [line for line in lines if re.search('^--', line ) == None]
-                
+
+    def list_schema_objects(self,schema):
+        cur = self.con.cursor()
+        rc = cur.var(cx_Oracle.CURSOR)
+        rc_schema_params = cur.var(cx_Oracle.CURSOR)
+        cur.prepare("""
+                begin 
+                    :rc := %s.admin_ui.list_schema_objects(:p_owner,:rc_schema_params);
+                end;    
+            """ % ( self.db_schema))
+
+        cur.execute(None,{'rc':rc,'p_owner':schema,'rc_schema_params':rc_schema_params})
+        curs_schema_params =  rc_schema_params.getvalue()
+        rs_schema_params = []
+        for row in rows_as_dicts(curs_schema_params):
+            #print(row)
+            rs_schema_params.append(SchemaParams(row))
+        logging.debug("Schema Params1:"+pprint.pformat(rs_schema_params))
+        try:
+            schema_params = rs_schema_params[0]
+        except IndexError:
+            schema_params=None
+
+
+        for row in rows_as_dicts(rc.getvalue()):
+            yield DDLEvent({"sysevent":'INIT',
+            "os_user":getuser(),"obj_owner":row['owner'],"obj_name": row['object_name'] ,
+            "obj_type":row['object_type'], "schema_params":schema_params
+            })

@@ -56,7 +56,7 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
       res := res || ' )'||chr(10)||'AS'||chr(10);
       select text
           into dummy
-      from all_views
+      from dba_views
       where view_name = p_obj_name
           and owner=p_obj_owner
       ;
@@ -80,7 +80,6 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
     when no_data_found then
        return p_default_value;
   end;
-
 
 END PROCESS_DDL_EVENTS;
 /

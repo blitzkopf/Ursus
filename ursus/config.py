@@ -1,6 +1,7 @@
 import ConfigParser
 import argparse
 import logging
+import sys
 
 def init_config(argv=None):
     # Do argv default this way, as doing it in the functional
@@ -19,7 +20,7 @@ def init_config(argv=None):
         add_help=False
     )
     # Add an optional string argument 'config' 
-    pre_argp.add_argument ("-c", "--config", dest='config_file', default='ursus.cfg', type=str);
+    pre_argp.add_argument ("-c", "--config", dest='config_file', default='ursus.cfg', type=str)
     pre_argp.add_argument(
         '-l',
         '--log',
@@ -49,6 +50,6 @@ def init_config(argv=None):
             )
     argp.set_defaults(**defaults)
     ## argp.add_argument("--option")
-    args = argp.parse_args(remaining_argv);
+    args,remaining_argv = argp.parse_known_args(remaining_argv)
     logging.basicConfig(level=args.log_level)
-    return config
+    return config,remaining_argv
