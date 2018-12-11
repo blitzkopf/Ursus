@@ -28,6 +28,7 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
     obj_owner := l_msg.obj_owner;
     obj_name := l_msg.obj_name;
     obj_type := l_msg.obj_type;
+    sql_text := l_msg.sql_text;
 
     open rc_schema_params for
       select *

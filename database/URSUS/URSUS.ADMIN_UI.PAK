@@ -3,7 +3,11 @@ CREATE OR REPLACE PACKAGE ADMIN_UI as
   procedure set_schema_params(p_schema	varchar2,p_git_origin_repo	varchar2,p_subdir	varchar2,p_type_prefix_map	varchar2,
     p_type_suffix_map	varchar2, p_filename_template	varchar2);
 
+  procedure get_schema_params(p_schema	varchar2,rc_schema_params out sys_refcursor);
+
+
   function list_schema_objects(p_owner varchar2,rc_schema_params out sys_refcursor) return sys_refcursor;
+
 
 end admin_ui;
 /

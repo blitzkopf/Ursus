@@ -12,6 +12,16 @@ CREATE OR REPLACE PACKAGE BODY ADMIN_UI as
     commit;
   end;
 
+  procedure get_schema_params(p_schema	varchar2,rc_schema_params out sys_refcursor ) as
+  begin
+
+   open rc_schema_params for
+      select *
+      from schema_params
+      where schema = p_schema;
+
+  end;
+
   function list_schema_objects(p_owner varchar2,rc_schema_params out sys_refcursor ) return sys_refcursor
   as
     results sys_refcursor;
