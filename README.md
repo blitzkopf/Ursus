@@ -15,7 +15,7 @@ Create a config file
     # the branch name used for DB code
     Branch = ursus
     [DATABASE]
-    # database to work with can be TNSNAME if set up or full descprtion
+    # database to work with can be TNSNAME if set up or full description
     ConnectString = (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=<dbhostname>)(PORT=1521))(CONNECT_DATA=(SID=<dbsid>)))
     # username to connect as ( still have not figured out where to keep password)
     Username = URSUS_RUNNER

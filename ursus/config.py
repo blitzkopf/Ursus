@@ -34,7 +34,7 @@ def init_config(argv=None):
     )
 
     args, remaining_argv = pre_argp.parse_known_args()
-
+    ## FIXME: LogLEvel in config file is ignored
     logging.basicConfig(level=args.log_level)
 
     if args.config_file:
