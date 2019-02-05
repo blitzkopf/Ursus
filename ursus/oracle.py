@@ -158,7 +158,7 @@ class DDLHandler:
         lastline = lines.pop()
         while re.search('^(--)',lastline ):
             lastline = lines.pop()
-        if not re.search('^\s*$',lastline):
+        if not re.search(r'^\s*$',lastline):
             lines.append(lastline)
         # if(object_type == 'TRIGGER' ) :
         #     # Triggers sometimes  missing the / between create and alter trigger statements 
@@ -237,7 +237,6 @@ class DDLHandler:
                     p_filename_template => :filename_template);
             end;
         """% (self.db_schema ))
-        rc_schema_params = cur.var(cx_Oracle.CURSOR)
         cur.execute(None,(schema,params.git_origin_repo, params.subdir, params.type_prefix_map, params.type_suffix_map , params.filename_template))
         self.con.commit()
         return self.get_schema_params(schema)

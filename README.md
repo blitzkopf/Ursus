@@ -1,13 +1,15 @@
-# Ursus 
+# Ursus
+
 Track Oracle DDL changes in a branch in Git
 
-## Configure daemon 
-Create a config file 
+## Configure daemon
+
+Create a config file
 
     [GENERAL]
     SourceControlType = GIT
     LogLevel = DEBUG
-    # Email domain used for author email address of commit 
+    # Email domain used for author email address of commit
     EmailDomain = mydomain.com
     [GIT]
     # the directory where the system keeps it clones (/tmp is a really bad choice)
@@ -22,15 +24,17 @@ Create a config file
     # Schema name of installation , should be separate from the user that connects to limit security impact
     Schema = URSUS
 
-## Configure per schema parameters 
+## Configure per schema parameters
+
     python ./ursusctrl.py --config vhgdev.cfg config_schema URSUS --git-origin-repo 'https://tfs.isbank.is/tfs/IslandsbankiCollection/IT/_git/Oracle.Git.Poc' --subdir=database --filename_template='${schema}/${schema}.${name}.${suffix}' --type_suffix_map=ursus
 
-## Initialize branch with existing code 
+## Initialize branch with existing code
+
     python ./ursusctrl.py --config vhgdev.cfg init_branch URSUS
 
+## Create the branch
 
-## Create the branch 
-Do something like 
+Do something like
 
     git clone /code/oracle/REPO
 
@@ -38,4 +42,3 @@ Do something like
     git pull
     git branch --set-upstream-to=origin/ursus ursus
     git push origin ursus
-
