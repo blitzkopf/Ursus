@@ -13,7 +13,7 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
 			l_dequeue_options.wait := wait_time;
 		end if;
     DBMS_AQ.DEQUEUE(
-      queue_name         => 'aq_ddl_event_queue',
+      queue_name         => 'URSUS.aq_ddl_event_queue',
       dequeue_options    => l_dequeue_options,
       message_properties => l_message_properties,
       payload            => l_msg,
@@ -32,36 +32,57 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
 
     open rc_schema_params for
       select *
-      from schema_params
+      from ursus.schema_params
       where schema = l_msg.obj_owner;
 
   END recv;
 
-  function get_ddl(p_obj_owner varchar2,p_obj_name varchar2, p_obj_type varchar2) return varchar
+  function get_ddl(p_obj_owner varchar2,p_obj_name varchar2, p_obj_type varchar2) return clob
   as
-      dummy varchar2(32000);
+      dummy clob;
       prefix varchar2(10) := '   ';
-      res varchar2(32000);
+      res CLOB;
+      l_cursor integer ;
+      l_n          NUMBER;
+      l_long_val   VARCHAR2(4000);
+      l_long_len   NUMBER;
+      l_buflen     NUMBER := 4000;
+      l_curpos     NUMBER := 0;
   begin
     if(p_obj_type = 'VIEW' ) then
-      res := 'CREATE OR REPLACE VIEW '||p_obj_name||' ('||chr(10);
-      for r in ( select column_name
-          from SYS.all_tab_cols
+        res := 'CREATE OR REPLACE FORCE VIEW '||p_obj_name||' ('||chr(10);
+        for r in ( select column_name
+          from SYS.dba_tab_cols
           where table_name = p_obj_name
               and owner = p_obj_owner
           order by column_id
-      ) loop
+        ) loop
           res := res || prefix||r.column_name ;
           prefix := ','||chr(10)||'   ';
-      end loop;
-      res := res || ' )'||chr(10)||'AS'||chr(10);
-      select text
-          into dummy
-      from dba_views
-      where view_name = p_obj_name
-          and owner=p_obj_owner
-      ;
-      res := res || dummy;
+        end loop;
+        res := res || ' )'||chr(10)||'AS'||chr(10);
+        l_cursor := dbms_sql.open_cursor;
+        dbms_sql.parse( l_cursor,
+        q'[select text
+            from dba_views
+            where view_name = :p_obj_name
+                and owner=:p_obj_owner
+            ]', dbms_sql.native );
+        dbms_sql.bind_variable( l_cursor, 'p_obj_name', p_obj_name );
+        dbms_sql.bind_variable( l_cursor, 'p_obj_owner', p_obj_owner );
+
+        dbms_sql.define_column_long(l_cursor, 1);
+        l_n := dbms_sql.execute(l_cursor);
+        IF ( dbms_sql.fetch_rows(l_cursor) > 0 ) THEN
+            LOOP
+                dbms_sql.column_value_long(l_cursor,1,l_buflen,l_curpos,l_long_val,l_long_len);
+                l_curpos := l_curpos + l_long_len;
+                dummy := dummy ||l_long_val;
+            EXIT WHEN l_long_len = 0;
+        END LOOP;
+        END IF;
+        --return dummy;
+        res := res || dummy || chr(10) || '/';
     else
       res := dbms_metadata.get_ddl(p_obj_type,p_obj_name,p_obj_owner);
    end if;
@@ -73,7 +94,7 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
     result varchar2(50);
   begin
     select value into result
-    from maps
+    from ursus.maps
     where map_name = p_map_name
       and key = p_key;
     return result;

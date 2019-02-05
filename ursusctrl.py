@@ -31,7 +31,7 @@ Commands:
         args,remaining_argv  = parser.parse_known_args(remaining_argv)
         
         if not hasattr(self, args.command):
-            print 'Unrecognized command: '+args.command
+            print('Unrecognized command: '+args.command)
             parser.print_help()
             exit(1)
         # use dispatch pattern to invoke method with same name

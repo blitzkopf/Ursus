@@ -1,7 +1,7 @@
-# Ursus
+# Ursus 
 Track Oracle DDL changes in a branch in Git
 
-## Configure daemon
+## Configure daemon 
 Create a config file 
 
     [GENERAL]
@@ -22,6 +22,12 @@ Create a config file
     # Schema name of installation , should be separate from the user that connects to limit security impact
     Schema = URSUS
 
+## Configure per schema parameters 
+    python ./ursusctrl.py --config vhgdev.cfg config_schema URSUS --git-origin-repo 'https://tfs.isbank.is/tfs/IslandsbankiCollection/IT/_git/Oracle.Git.Poc' --subdir=database --filename_template='${schema}/${schema}.${name}.${suffix}' --type_suffix_map=ursus
+
+## Initialize branch with existing code 
+    python ./ursusctrl.py --config vhgdev.cfg init_branch URSUS
+
 
 ## Create the branch 
 Do something like 
@@ -32,3 +38,4 @@ Do something like
     git pull
     git branch --set-upstream-to=origin/ursus ursus
     git push origin ursus
+

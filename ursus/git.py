@@ -3,12 +3,15 @@ from string import Template
 import subprocess
 import os
 import logging
+## ULGY: need to remove this dependency on oracle 
+import cx_Oracle
 
 class GITHandler:
     def __init__(self,config,ddl_handler):
         self.gitclones = config.get('GIT','CloneDirectory')
         self.gitbranch = config.get('GIT','Branch')
         self.email_domain = config.get('GENERAL','EmailDomain')
+        ## FIXME: Don't use fixed name :)
         self.myclone = self.gitclones + os.sep + "Oracle.Git.Poc"
         self.ddl_handler = ddl_handler
         self.uncommited_repos = set()
@@ -42,14 +45,25 @@ class GITHandler:
         logging.info("committing file "+fullname)
         
         os.chdir(myclone)
+        try:
+            with  open(fullname, 'w') as f:
+                for line in self.ddl_handler.get_source_lines(event_data.obj_owner,event_data.obj_name,event_data.obj_type):
+                    f.write(line)
+            subprocess.call( [ "git",  "stage", fullname] ) 
+            if(do_commit):
+                self.commit_push(myclone,"Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ),
+                    "%s <%s@%s>"%(event_data.os_user,event_data.os_user,self.email_domain)   )
+        except cx_Oracle.DatabaseError as e:
+            oerr, = e.args
+            logging.error("ORA-"+str(oerr.code)+" "+event_data.obj_type+" "+(event_data.obj_name[:6]))
+            if(oerr.code == 31603 and event_data.obj_type == 'SEQUENCE' and event_data.obj_name[:6] == 'ISEQ$$' ):
+                logging.info(event_data.obj_name+" is a identity column sequencv will be skipped")
+                os.remove(fullname)
+            else:
+                raise
+                
 
-        with  open(fullname, 'w') as f:
-            for line in self.ddl_handler.get_source_lines(event_data.obj_owner,event_data.obj_name,event_data.obj_type):
-                f.write(line)
-        subprocess.call( [ "git",  "stage", fullname] ) 
-        if(do_commit):
-            self.commit_push(myclone,"Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ),
-                "%s <%s@%s>"%(event_data.os_user,event_data.os_user,self.email_domain)   )
+            
 
     def commit_push(self,myclone,message,author):
         os.chdir(myclone)

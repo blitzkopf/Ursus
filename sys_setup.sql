@@ -1,5 +1,6 @@
 create user ursus identified by &&password
-  QUOTA UNLIMITED ON users;
+  QUOTA UNLIMITED ON users
+  default tablespace users;
 
 grant connect to ursus;
 grant resource to ursus;
@@ -14,6 +15,7 @@ grant select_catalog_role to ursus;
 
 grant select on dba_objects to ursus;
 grant select on dba_views to ursus;
+grant select on dba_tab_cols to ursus;
 
 grant execute on dbms_aqadm to ursus;
 grant execute on dbms_aq to ursus;
@@ -22,3 +24,9 @@ grant create any trigger to ursus;
 grant administer database trigger to ursus;-- required for ON DATABASE
 grant alter any trigger to ursus;
 grant drop any trigger to ursus;
+
+create user ursus_connector identified by  &&password2;
+
+grant  connect to ursus_connector;
+grant select on dba_objects to ursus_connector;
+grant select on dba_views to ursus_connector;

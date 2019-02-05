@@ -12,7 +12,8 @@ object_type_map = {
     'PACKAGE':'PACKAGE_SPEC',
     'TYPE BODY':'TYPE_BODY',
     'TYPE':'TYPE_SPEC',
-    'JOB':'PROCOBJ'
+    'JOB':'PROCOBJ',
+    'MATERIALIZED VIEW':'MATERIALIZED_VIEW',
     }
 
 def rows_as_dicts(cursor):
@@ -43,8 +44,19 @@ class DDLHandler:
         pw=getpass("Oracle password for %s:" % (self.db_username) )
 
         self.con = cx_Oracle.connect(user=self.db_username,password=pw,dsn=self.db_connect_string)
+        setup_cur = self.con.cursor()
+        ## TODO: Make these parameter configurable.
+        setup_cur.execute("""
+            BEGIN
+                DBMS_METADATA.set_transform_param (DBMS_METADATA.session_transform, 'SQLTERMINATOR', true);
+                DBMS_METADATA.set_transform_param (DBMS_METADATA.session_transform, 'SEGMENT_ATTRIBUTES', true);
+                DBMS_METADATA.set_transform_param (DBMS_METADATA.session_transform, 'STORAGE', true);
+                DBMS_METADATA.set_transform_param (DBMS_METADATA.session_transform, 'TABLESPACE', false);
+            END;
+        """)
+        setup_cur.close()
+        
         self.cur = self.con.cursor()
-
         # sysevent out VARCHAR2,login_user out VARCHAR2,instance_num out NUMBER,database_name out VARCHAR2, 
         #    obj_owner out VARCHAR, obj_name out VARCHAR, obj_type out VARCHAR, sql_text out CLOB
         self.sysevent = self.cur.var(cx_Oracle.STRING)
@@ -140,26 +152,26 @@ class DDLHandler:
             lines.pop(0)
         lines[0]=re.sub('^ +','',lines[0])
         lines[0]=re.sub(' +$','',lines[0])
-        lines[0]=re.sub('\"','',lines[0])
-        lines[0]=re.sub(schema+'\.','',lines[0])
-        lines[0]=re.sub('EDITIONABLE\s','',lines[0])
+        lines[0]=re.sub(r'\"','',lines[0])
+        lines[0]=re.sub(schema+r'\.','',lines[0])
+        lines[0]=re.sub(r'EDITIONABLE\s','',lines[0])
         lastline = lines.pop()
-        while re.search('^(/|--)',lastline ):
+        while re.search('^(--)',lastline ):
             lastline = lines.pop()
         if not re.search('^\s*$',lastline):
             lines.append(lastline)
-        if(object_type == 'TRIGGER' ) :
-            # Triggers sometimes  missing the / between create and alter trigger statements 
-            lastline = lines.pop()
-            keep = []
-            print("backing")
-            while re.search('^\s*ALTER',lastline ):
-                keep.insert(0,lastline)
-                lastline = lines.pop()
-            lines.append(lastline)
-            lines.append("/\n")
-            lines.extend(keep)
-        lines.append("/")
+        # if(object_type == 'TRIGGER' ) :
+        #     # Triggers sometimes  missing the / between create and alter trigger statements 
+        #     lastline = lines.pop()
+        #     keep = []
+        #     print("backing")
+        #     while re.search('^\s*ALTER',lastline ):
+        #         keep.insert(0,lastline)
+        #         lastline = lines.pop()
+        #     lines.append(lastline)
+        #     lines.append("/\n")
+        #     lines.extend(keep)
+        # lines.append("/")
         lines = [ re.sub(' +$','',line)  for line in lines ]
         return lines
         #head = lines[:-10]

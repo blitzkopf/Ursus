@@ -35,8 +35,13 @@ CREATE OR REPLACE PACKAGE BODY ADMIN_UI as
     open results for
       select object_type, owner,object_name, last_ddl_time,sys_context('userenv','DB_NAME') db_name
       from dba_objects where object_type in ( 'PACKAGE','PACKAGE BODY','VIEW',
-          'TYPE','TYPE BODY','TABLE','FUNCTION','PROCEDURE','INDEX','SEQUENCE','JOB','TRIGGER')
-          and owner=p_owner;
+          'TYPE','TYPE BODY','TABLE','FUNCTION','PROCEDURE','INDEX','SEQUENCE','JOB','TRIGGER','MATERIALIZED VIEW')
+          and owner=p_owner
+          and (owner, object_name,object_type) not in (
+            select owner, object_name,'TABLE'
+            from dba_objects
+            where owner=p_owner and object_type='MATERIALIZED VIEW'
+        );
     return results;
   end;
 
