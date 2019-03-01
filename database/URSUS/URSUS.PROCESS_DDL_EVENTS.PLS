@@ -103,5 +103,44 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
        return p_default_value;
   end;
 
+  procedure get_depend_priority(p_obj_owner varchar2, p_map1 varchar2, p_map2 varchar2, rc out sys_refcursor ) as
+  begin
+    open rc for
+      q'[with depend  as (
+        select referenced_owner owner,referenced_name name, referenced_type type,
+            owner d_owner,name d_name,type d_type
+        from dba_dependencies
+        where (referenced_owner,referenced_name,referenced_type) not
+          in (
+            ('SYS',	'STANDARD',	'PACKAGE')
+          )
+        union all
+        select table_owner owner,table_name name,'TABLE' type,
+            owner d_owner, index_name d_name, 'INDEX' d_type
+        from dba_indexes
+        ),  rdep(owner,name,type, d_owner, d_name,  d_type, lvl ) as
+        (
+            select d.*, cast ( 1  as number ) lvl
+            from depend d
+            where owner=:p_obj_owner
+            union all
+            select d.owner,d.name,d.type,d.d_owner,d.d_name, d.d_type, r.lvl + 1 lvl
+            from rdep r
+              join depend d on d.owner=r.d_owner and d.name=r.d_name and d.type = r.d_type
+        ) cycle owner,name,type set looped  to 'Y' default 'u'
+        --select * from depend;
+        select d_owner,d_name,d_type,max_level, m1.value type_mapped1, m2.value type_mapped2
+        from (
+            select d_owner,d_name,d_type , max(lvl) max_level
+            from rdep
+            group by d_owner,d_name,d_type
+            order by max_level desc
+            ) s
+            left join ursus.maps m1 on m1.map_name = :p_map1 and m1.key=s.d_type
+            left join ursus.maps m2 on m2.map_name = :p_map2 and m2.key=s.d_type
+        ]' using p_obj_owner,p_map1, p_map2;
+
+  end get_depend_priority;
+
 END PROCESS_DDL_EVENTS;
 /

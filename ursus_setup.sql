@@ -1,11 +1,10 @@
 
-@@database/URSUS/URSUS.DDL_EVENT_TYPE.TYP
-
   BEGIN DBMS_AQADM.DROP_QUEUE_TABLE( Queue_table        => '"URSUS"."AQ_DDL_EVENT_TABLE"',
 	force => True);
 	end;
 /
 	
+@@database/URSUS/URSUS.DDL_EVENT_TYPE.TYP
 
 
 --------------------------------------------------------

@@ -5,7 +5,7 @@ CREATE OR REPLACE TYPE DDL_EVENT_TYPE AS OBJECT(
   instance_num NUMBER,
   database_name VARCHAR2(50),
   obj_owner VARCHAR(30) ,
-  obj_name VARCHAR(30),
+  obj_name VARCHAR(61), -- sometimes column name tags along
   obj_type  VARCHAR(20),
   sql_text CLOB
   --ora_is_alter_column,

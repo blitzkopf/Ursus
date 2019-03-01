@@ -16,6 +16,8 @@ grant select_catalog_role to ursus;
 grant select on dba_objects to ursus;
 grant select on dba_views to ursus;
 grant select on dba_tab_cols to ursus;
+grant select on dba_indexes to ursus with grant option;
+grant select on dba_dependencies  to ursus with grant option;
 
 grant execute on dbms_aqadm to ursus;
 grant execute on dbms_aq to ursus;
@@ -30,3 +32,5 @@ create user ursus_connector identified by  &&password2;
 grant  connect to ursus_connector;
 grant select on dba_objects to ursus_connector;
 grant select on dba_views to ursus_connector;
+grant select on dba_indexes to ursus_connector;
+grant select on dba_dependencies  to ursus_connector;

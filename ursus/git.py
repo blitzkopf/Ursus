@@ -3,6 +3,7 @@ from string import Template
 import subprocess
 import os
 import logging
+import json
 ## ULGY: need to remove this dependency on oracle 
 import cx_Oracle
 
@@ -51,13 +52,31 @@ class GITHandler:
                     f.write(line)
             subprocess.call( [ "git",  "stage", fullname] ) 
             if(do_commit):
+                dependency_priority = self.ddl_handler.get_depend_priority(event_data.obj_owner,event_data.schema_params.type_prefix_map,event_data.schema_params.type_suffix_map)
+                pri_file = self.myclone + os.sep + event_data.schema_params.subdir + os.sep + '.ursus_dependency_priority'
+                try:
+                    with open(pri_file) as json_file:  
+                        pri_dict = json.load(json_file)
+                except IOError:
+                    pri_dict={}
+                for obj in dependency_priority:
+                    filename = Template(event_data.schema_params.filename_template).substitute(schema=obj['d_owner'], name=obj['d_name'],
+                        type = obj['d_type'], prefix=obj['type_mapped1'],suffix=obj['type_mapped2'])
+                    print(filename)
+                    pri_dict[filename] = obj['max_level']
+                with open(pri_file, 'w') as outfile:
+                    json.dump(pri_dict, outfile,sort_keys=True, indent=2) 
+                subprocess.call( [ "git",  "stage", pri_file] ) 
                 self.commit_push(myclone,"Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ),
                     "%s <%s@%s>"%(event_data.os_user,event_data.os_user,self.email_domain)   )
         except cx_Oracle.DatabaseError as e:
             oerr, = e.args
             logging.error("ORA-"+str(oerr.code)+" "+event_data.obj_type+" "+(event_data.obj_name[:6]))
             if(oerr.code == 31603 and event_data.obj_type == 'SEQUENCE' and event_data.obj_name[:6] == 'ISEQ$$' ):
-                logging.info(event_data.obj_name+" is a identity column sequencv will be skipped")
+                logging.info(event_data.obj_name+" is a identity column sequence will be skipped")
+                os.remove(fullname)
+            elif(oerr.code == 31603 ):
+                logging.error(event_data.obj_name+" could not be found, probably already dropped")
                 os.remove(fullname)
             else:
                 raise

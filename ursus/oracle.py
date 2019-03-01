@@ -5,6 +5,7 @@ import traceback
 from collections import namedtuple
 import re
 import pprint
+import os
 
 
 object_type_map = {
@@ -42,7 +43,7 @@ class DDLHandler:
         self.db_schema = config.get('DATABASE','Schema')
         
         pw=getpass("Oracle password for %s:" % (self.db_username) )
-
+        os.environ['NLS_LANG']='.AL32UTF8'
         self.con = cx_Oracle.connect(user=self.db_username,password=pw,dsn=self.db_connect_string)
         setup_cur = self.con.cursor()
         ## TODO: Make these parameter configurable.
@@ -90,6 +91,12 @@ class DDLHandler:
         self.map_cur.prepare("""
 
                     begin :res := %s.process_ddl_events.map(:map_name,:key,:default_value); end;
+
+                    """ % (self.db_schema ))
+        self.priority_cur = self.con.cursor()
+        self.priority_cur.prepare("""
+
+                    begin %s.process_ddl_events.get_depend_priority(:object_owner,:map_name1,:map_name2,:rc_priority); end;
 
                     """ % (self.db_schema ))
 
@@ -240,3 +247,16 @@ class DDLHandler:
         cur.execute(None,(schema,params.git_origin_repo, params.subdir, params.type_prefix_map, params.type_suffix_map , params.filename_template))
         self.con.commit()
         return self.get_schema_params(schema)
+    
+    def get_depend_priority(self,schema,map_name1,map_name2):
+        rc_priority = self.priority_cur.var(cx_Oracle.CURSOR)
+        self.priority_cur.execute(None,{'object_owner':schema,'map_name1':map_name1,'map_name2':map_name2,'rc_priority':rc_priority})
+        curs_priority =  rc_priority.getvalue()
+        rs_priority = []
+        for row in rows_as_dicts(curs_priority):
+            print(row)
+            rs_priority.append(row)
+        return rs_priority
+
+
+

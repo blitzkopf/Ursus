@@ -18,8 +18,6 @@ email_domain = config.get('GENERAL','EmailDomain')
 
 
 
-
-
 def deal_with_it(git_handler,event_data):
     if event_data.sysevent == 'CREATE':
         git_handler.create(event_data)

@@ -7,5 +7,7 @@ CREATE OR REPLACE PACKAGE PROCESS_DDL_EVENTS authid current_user AS
 
   function map(p_map_name varchar2, p_key varchar2,p_default_value varchar2 default null) return varchar2;
 
+  procedure get_depend_priority(p_obj_owner varchar2, p_map1 varchar2, p_map2 varchar2, rc out sys_refcursor);
+
 END PROCESS_DDL_EVENTS;
 /
