@@ -4,6 +4,7 @@ import subprocess
 import os
 import logging
 import json
+from datetime import datetime
 ## ULGY: need to remove this dependency on oracle 
 import cx_Oracle
 
@@ -118,6 +119,27 @@ class GITHandler:
             "-m", "Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ) , 
             '--author',   "%s <%s@%s>"%(event_data.os_user, event_data.os_user, self.email_domain)] )
         subprocess.call( [ "git",  "push" ] )
+    
+    def alter(self,event_data):
+        fullname,myclone=self.get_fullname_clonedir(event_data)
+        (dir,filename) = os.path.split(fullname)
+        dir=os.path.join(dir,'changes')
+        if not os.path.exists(dir) :
+            os.makedirs(dir)
+        fullname = os.path.join(dir , filename)
+        ##if not os.path.isdir(dir):
+        ##    raise  
+        logging.info("alter file "+fullname)
+
+        os.chdir(myclone)
+        with  open(fullname, 'a+') as f:
+            f.write("-- %s, change by: %s\n"%(datetime.now(),event_data.os_user))
+            f.write(event_data.sql_text)
+            f.write(';\n')
+        subprocess.call( [ "git",  "stage", fullname] ) 
+        self.create(event_data)
+
+
 
     def setup_branch(self,schema_params):
         logging.debug("changin to clone dir %s"%(self.gitclones))

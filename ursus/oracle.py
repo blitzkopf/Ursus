@@ -116,7 +116,8 @@ class DDLHandler:
         logging.info("sysevent:%s, login_user:%s, os_user:%s owner:%s, name:%s, type:%s" %(self.sysevent.getvalue(),self.login_user.getvalue(),
             self.os_user.getvalue(),self.obj_owner.getvalue(), self.obj_name.getvalue(),self.obj_type.getvalue()))
         try:
-            logging.info("Statement:%s"%(self.sql_text.getvalue().read()))
+            sql_text = self.sql_text.getvalue().read().rstrip('\0') ## Oracle adds a chr(0) to the CLOB for good measure.
+            logging.info("Statement:%s"%(sql_text))
         except:
             logging.info('No SQL statement Collected')
             logging.debug(traceback.format_exc())
@@ -135,7 +136,7 @@ class DDLHandler:
 
         return DDLEvent({"sysevent":self.sysevent.getvalue(),"login_user":self.login_user.getvalue(),
             "os_user":self.os_user.getvalue(),"obj_owner":self.obj_owner.getvalue(),"obj_name": self.obj_name.getvalue(),
-            "obj_type":self.obj_type.getvalue(), "schema_params":schema_params
+            "obj_type":self.obj_type.getvalue(),"sql_text":sql_text , "schema_params":schema_params
         })
 
     def commit(self):
