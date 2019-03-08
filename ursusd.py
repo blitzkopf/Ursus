@@ -23,7 +23,7 @@ def deal_with_it(git_handler,event_data):
         git_handler.create(event_data)
     elif event_data.sysevent == 'DROP':
         git_handler.drop(event_data)
-    elif event_data.sysevent == 'ALTER':
+    elif event_data.sysevent == 'ALTER' and event_data.obj_type == 'TABLE':
         git_handler.alter(event_data)
 
 ddl_handler = ursus.DDLHandler(config)
