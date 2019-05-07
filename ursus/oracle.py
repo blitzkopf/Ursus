@@ -15,6 +15,7 @@ object_type_map = {
     'TYPE':'TYPE_SPEC',
     'JOB':'PROCOBJ',
     'MATERIALIZED VIEW':'MATERIALIZED_VIEW',
+    'SNAPSHOT':'MATERIALIZED_VIEW', ## for some strange reason MVIEWs sometimes show up as SNAPSHOT , even if statement says create materialized view.
     }
 
 def rows_as_dicts(cursor):

@@ -140,7 +140,6 @@ class GITHandler:
         self.create(event_data)
 
 
-
     def setup_branch(self,schema_params):
         logging.debug("changin to clone dir %s"%(self.gitclones))
         os.chdir(self.gitclones)
