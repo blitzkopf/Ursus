@@ -1,7 +1,7 @@
 CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
 
   procedure recv( sysevent out VARCHAR2,login_user out VARCHAR2,os_user out VARCHAR2,instance_num out NUMBER,database_name out VARCHAR2,
-    obj_owner out VARCHAR, obj_name out VARCHAR, obj_type out VARCHAR, sql_text out CLOB,rc_schema_params out sys_refcursor ,  wait_time number default null)
+    obj_owner out VARCHAR, obj_name out VARCHAR, obj_type out VARCHAR, obj_status out varchar2 , sql_text out CLOB,rc_schema_params out sys_refcursor ,  wait_time number default null)
   AS
     l_dequeue_options    DBMS_AQ.DEQUEUE_OPTIONS_T;
     l_message_properties DBMS_AQ.MESSAGE_PROPERTIES_T;
@@ -30,6 +30,17 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
     obj_type := l_msg.obj_type;
     sql_text := l_msg.sql_text;
 
+    begin
+      select status
+        into obj_status
+      from dba_objects
+      where owner=obj_owner
+        and object_name = obj_name
+        and object_type = obj_type;
+    exception when no_data_found then
+      obj_status := NULL;
+    end;
+
     open rc_schema_params for
       select *
       from ursus.schema_params
@@ -37,7 +48,7 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
 
   END recv;
 
-  function get_ddl(p_obj_owner varchar2,p_obj_name varchar2, p_obj_type varchar2) return clob
+  function get_ddl(p_obj_owner varchar2,p_obj_name varchar2, p_obj_type varchar2 ) return clob
   as
       dummy clob;
       prefix varchar2(10) := '   ';
@@ -85,7 +96,8 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
         res := res || dummy || chr(10) || '/';
     else
       res := dbms_metadata.get_ddl(p_obj_type,p_obj_name,p_obj_owner);
-   end if;
+    end if;
+
    return res;
   end;
 

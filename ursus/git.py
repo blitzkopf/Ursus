@@ -123,7 +123,7 @@ class GITHandler:
             f.write(';\n')
         subprocess.call( [ "git",  "stage", fullname] ) 
         self.create(event_data)
-
+    
 
     def setup_branch(self,schema_params):
         logging.debug("changin to clone dir %s"%(self.gitclones))

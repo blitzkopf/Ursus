@@ -20,6 +20,11 @@ ddl_handler = ursus.DDLHandler(config)
 git_handler = ursus.GITHandler(config,ddl_handler)
 commit_scheduler = ursus.CommitScheduler(git_handler)
 
+def manual_commit(event_data):
+    git_handler.commit(event_data.obj_owner,event_data.schema_params,event_data.sql_text,
+        "%s <%s@%s>"%(event_data.os_user,event_data.os_user,email_domain))
+    commit_scheduler.cancel(event_data.obj_owner)
+
 def deal_with_it(git_handler,event_data):
     schema_params = event_data.schema_params
     if(event_data.obj_status == 'VALID'):
@@ -32,6 +37,9 @@ def deal_with_it(git_handler,event_data):
         git_handler.drop(event_data)
     elif event_data.sysevent == 'ALTER' and event_data.obj_type == 'TABLE':
         git_handler.alter(event_data)
+    elif event_data.sysevent == 'GIT_COMMIT' :
+        manual_commit(event_data)
+        return
     else:
         return
     commit_scheduler.schedule(event_data.obj_owner,schema_params.commit_behavior,is_valid,schema_params,

@@ -1,3 +1,9 @@
 {
-    "python.pythonPath": "C:\\Python36\\python.exe"
+    "python.pythonPath": "C:\\Python36\\python.exe",
+    "gitflow4code.features": [
+        {
+            "name": "feature/manual_commit",
+            "base": "develop"
+        }
+    ]
 }
