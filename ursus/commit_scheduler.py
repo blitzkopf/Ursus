@@ -26,6 +26,12 @@ class CommitScheduler:
         else:
             raise Exception("Unknown commit scheduler")
 
+    def cancel(self,schema):
+        try:
+            del self.commit_queue[schema] 
+        except KeyError:
+            pass
+
     def fire(self):
         now = time.time()
         for schema, val in self.commit_queue.items():

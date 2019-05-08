@@ -105,3 +105,4 @@ venv.bak/
 
 # Ursus config file
 *.cfg
+.vscode/settings.json

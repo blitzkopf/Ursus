@@ -1,0 +1,6 @@
+CREATE OR REPLACE PACKAGE CONTROL_UI as
+
+  procedure git_commit(p_schema varchar2,p_message varchar);
+
+end control_ui;
+/
