@@ -1,0 +1,7 @@
+-- 2019-05-07 14:52:21.288650, change by: yngvisig
+alter table SCHEMA_PARAMS
+add ( 
+  commit_behavior varchar2(10),
+  valid_timeout number,
+  invalid_timeout number
+);
