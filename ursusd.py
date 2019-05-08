@@ -16,18 +16,28 @@ db_username = config.get('DATABASE','Username')
 db_schema = config.get('DATABASE','Schema')
 email_domain = config.get('GENERAL','EmailDomain')
 
-
+ddl_handler = ursus.DDLHandler(config)
+git_handler = ursus.GITHandler(config,ddl_handler)
+commit_scheduler = ursus.CommitScheduler(git_handler)
 
 def deal_with_it(git_handler,event_data):
+    schema_params = event_data.schema_params
+    if(event_data.obj_status == 'VALID'):
+        is_valid = True
+    else:
+        is_valid = False
     if event_data.sysevent == 'CREATE':
         git_handler.create(event_data)
     elif event_data.sysevent == 'DROP':
         git_handler.drop(event_data)
     elif event_data.sysevent == 'ALTER' and event_data.obj_type == 'TABLE':
         git_handler.alter(event_data)
-
-ddl_handler = ursus.DDLHandler(config)
-git_handler = ursus.GITHandler(config,ddl_handler)
+    else:
+        return
+    commit_scheduler.schedule(event_data.obj_owner,schema_params.commit_behavior,is_valid,schema_params,
+        "Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ),
+        "%s <%s@%s>"%(event_data.os_user,event_data.os_user,email_domain))
+    
 
 while True:
     event_data = ddl_handler.recv_next()
@@ -35,3 +45,4 @@ while True:
     if(event_data and event_data.schema_params != None):
         deal_with_it(git_handler,event_data)
     ddl_handler.commit()
+    commit_scheduler.fire()

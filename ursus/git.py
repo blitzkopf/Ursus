@@ -16,7 +16,6 @@ class GITHandler:
         ## FIXME: Don't use fixed name :)
         self.myclone = self.gitclones + os.sep + "Oracle.Git.Poc"
         self.ddl_handler = ddl_handler
-        self.uncommited_repos = set()
 
     def get_fullname_clonedir(self,event_data):
         if event_data.schema_params.type_suffix_map :
@@ -36,7 +35,7 @@ class GITHandler:
         ## TODO find clone dir
         return fullname,self.myclone 
         
-    def create(self,event_data,do_commit=True):
+    def create(self,event_data):
         fullname,myclone=self.get_fullname_clonedir(event_data)
         dir = os.path.dirname(fullname)
         if not os.path.exists(dir) :
@@ -52,24 +51,6 @@ class GITHandler:
                 for line in self.ddl_handler.get_source_lines(event_data.obj_owner,event_data.obj_name,event_data.obj_type):
                     f.write(line)
             subprocess.call( [ "git",  "stage", fullname] ) 
-            if(do_commit):
-                dependency_priority = self.ddl_handler.get_depend_priority(event_data.obj_owner,event_data.schema_params.type_prefix_map,event_data.schema_params.type_suffix_map)
-                pri_file = self.myclone + os.sep + event_data.schema_params.subdir + os.sep + '.ursus_dependency_priority'
-                try:
-                    with open(pri_file) as json_file:  
-                        pri_dict = json.load(json_file)
-                except IOError:
-                    pri_dict={}
-                for obj in dependency_priority:
-                    filename = Template(event_data.schema_params.filename_template).substitute(schema=obj['d_owner'], name=obj['d_name'],
-                        type = obj['d_type'], prefix=obj['type_mapped1'],suffix=obj['type_mapped2'])
-                    print(filename)
-                    pri_dict[filename] = obj['max_level']
-                with open(pri_file, 'w') as outfile:
-                    json.dump(pri_dict, outfile,sort_keys=True, indent=2) 
-                subprocess.call( [ "git",  "stage", pri_file] ) 
-                self.commit_push(myclone,"Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ),
-                    "%s <%s@%s>"%(event_data.os_user,event_data.os_user,self.email_domain)   )
         except cx_Oracle.DatabaseError as e:
             oerr, = e.args
             logging.error("ORA-"+str(oerr.code)+" "+event_data.obj_type+" "+(event_data.obj_name[:6]))
@@ -81,7 +62,24 @@ class GITHandler:
                 os.remove(fullname)
             else:
                 raise
-                
+
+    def commit(self,owner,schema_params,message,author):
+        dependency_priority = self.ddl_handler.get_depend_priority(owner,schema_params.type_prefix_map,schema_params.type_suffix_map)
+        pri_file = self.myclone + os.sep + schema_params.subdir + os.sep + '.ursus_dependency_priority'
+        try:
+            with open(pri_file) as json_file:  
+                pri_dict = json.load(json_file)
+        except IOError:
+            pri_dict={}
+        for obj in dependency_priority:
+            filename = Template(schema_params.filename_template).substitute(schema=obj['d_owner'], name=obj['d_name'],
+                type = obj['d_type'], prefix=obj['type_mapped1'],suffix=obj['type_mapped2'])
+            print(filename)
+            pri_dict[filename] = obj['max_level']
+        with open(pri_file, 'w') as outfile:
+            json.dump(pri_dict, outfile,sort_keys=True, indent=2) 
+        subprocess.call( [ "git",  "stage", pri_file] ) 
+        self.commit_push(self.myclone,message,author )       
 
             
 
@@ -91,15 +89,6 @@ class GITHandler:
             "-m", message , 
             '--author',   author] )
         subprocess.call( [ "git",  "push" ] )
-
-    ## Not really thought through how to deal wit multiple users
-    # def commit(self):
-    #     while(len(self.uncommited_repos)>0):
-    #         clonedir=self.uncommited_repos.pop()
-    #         subprocess.call( [ "git",  "commit", 
-    #             "-m", "Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ) , 
-    #             '--author',   "%s <%s@%s>"%(event_data.os_user,event_data.os_user,self.email_domain)] )
-    #         subprocess.call( [ "git",  "push" ] )
             
 
     def drop(self,event_data):
@@ -115,10 +104,6 @@ class GITHandler:
         os.chdir(myclone)
 
         subprocess.call( [ "git",  "rm", fullname] ) 
-        subprocess.call( [ "git",  "commit", 
-            "-m", "Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ) , 
-            '--author',   "%s <%s@%s>"%(event_data.os_user, event_data.os_user, self.email_domain)] )
-        subprocess.call( [ "git",  "push" ] )
     
     def alter(self,event_data):
         fullname,myclone=self.get_fullname_clonedir(event_data)

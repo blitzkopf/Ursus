@@ -70,11 +70,13 @@ class DDLHandler:
         self.obj_name = self.cur.var(cx_Oracle.STRING)
         self.obj_type = self.cur.var(cx_Oracle.STRING)
         self.sql_text = self.cur.var(cx_Oracle.CLOB)
+        self.obj_status = self.cur.var(cx_Oracle.STRING)
+
         ##self.rc_schema_params = self.cur.var(cx_Oracle.CURSOR)
         self.cur.prepare("""
             begin 
                 %s.process_ddl_events.RECV(:sysevent,:login_user,:os_user,:instance_num,:database_name,
-                    :obj_owner,:obj_name,:obj_type,:sql_text,:rc_schema_params,:wait_time);
+                    :obj_owner,:obj_name,:obj_type,:obj_status,:sql_text,:rc_schema_params,:wait_time);
             end;
         """% (self.db_schema ))
 
@@ -85,6 +87,7 @@ class DDLHandler:
                     begin :res := %s.process_ddl_events.get_ddl(:object_owner,:object_name,:object_type); end;
 
                     """ % (self.db_schema ))
+
 
         self.map_cur = self.con.cursor()
 
@@ -105,7 +108,7 @@ class DDLHandler:
         try:
             rc_schema_params = self.cur.var(cx_Oracle.CURSOR)
             self.cur.execute(None,(self.sysevent, self.login_user, self.os_user, self.instance_num,self.database_name,
-                self.obj_owner,self.obj_name,self.obj_type,self.sql_text,rc_schema_params,10))
+                self.obj_owner,self.obj_name,self.obj_type,self.obj_status,self.sql_text,rc_schema_params,10))
         except cx_Oracle.DatabaseError as ex:
             error, = ex.args
             if(error.code == 25228):
@@ -137,7 +140,7 @@ class DDLHandler:
 
         return DDLEvent({"sysevent":self.sysevent.getvalue(),"login_user":self.login_user.getvalue(),
             "os_user":self.os_user.getvalue(),"obj_owner":self.obj_owner.getvalue(),"obj_name": self.obj_name.getvalue(),
-            "obj_type":self.obj_type.getvalue(),"sql_text":sql_text , "schema_params":schema_params
+            "obj_type":self.obj_type.getvalue(),"obj_status":self.obj_status.getvalue(), "sql_text":sql_text , "schema_params":schema_params
         })
 
     def commit(self):

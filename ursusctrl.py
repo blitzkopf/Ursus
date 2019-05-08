@@ -52,7 +52,7 @@ Commands:
 
         for rec in ddl_handler.list_schema_objects(args.schema):
             print(rec)
-            git_handler.create(rec,do_commit=False)
+            git_handler.create(rec)
         
         git_handler.commit_push(myclone,"Initial commit from DB","%s <%s@%s>"%('URSUS','ursus',self.email_domain))
     
