@@ -45,16 +45,20 @@ Commands:
         args = parser.parse_args(argv)
 
         ddl_handler = ursus.DDLHandler(self.config)
-        git_handler = ursus.GITHandler(self.config,ddl_handler)
+        git_handler = ursus.GITHandler(self.config)
 
         schema_params = ddl_handler.get_schema_params(args.schema)
         myclone=git_handler.setup_branch(schema_params)
+        if schema_params.build_system == 'liquibase':
+            builder = ursus.LiquibaseBuilder(self.config,ddl_handler,git_handler)
+        elif schema_params.build_system == 'bobcat':
+            builder = ursus.BobcatBuilder(config,ddl_handler,git_handler)
 
         for rec in ddl_handler.list_schema_objects(args.schema):
             print(rec)
-            git_handler.create(rec)
-        
-        git_handler.commit_push(myclone,"Initial commit from DB","%s <%s@%s>"%('URSUS','ursus',self.email_domain))
+            builder.create(rec)
+        builder.commit(args.schema,schema_params,"Initial commit from DB","%s <%s@%s>"%('URSUS','ursus',self.email_domain))
+        #git_handler.commit_push(myclone,"Initial commit from DB","%s <%s@%s>"%('URSUS','ursus',self.email_domain))
     
     def config_schema(self,argv):
         parser = argparse.ArgumentParser(
