@@ -17,32 +17,35 @@ db_schema = config.get('DATABASE','Schema')
 email_domain = config.get('GENERAL','EmailDomain')
 
 ddl_handler = ursus.DDLHandler(config)
-git_handler = ursus.GITHandler(config,ddl_handler)
-commit_scheduler = ursus.CommitScheduler(git_handler)
+git_handler = ursus.GITHandler(config)
+bobcatbuilder = ursus.BobcatBuilder(config,ddl_handler,git_handler)
+liquibasebuilder = ursus.LiquibaseBuilder(config,ddl_handler,git_handler)
+commit_scheduler = ursus.CommitScheduler()
 
 def manual_commit(event_data):
-    git_handler.commit(event_data.obj_owner,event_data.schema_params,event_data.sql_text,
+    builder.commit(event_data.obj_owner,event_data.schema_params,event_data.sql_text,
         "%s <%s@%s>"%(event_data.os_user,event_data.os_user,email_domain))
     commit_scheduler.cancel(event_data.obj_owner)
 
-def deal_with_it(git_handler,event_data):
+def deal_with_it(builder,event_data):
     schema_params = event_data.schema_params
+    
     if(event_data.obj_status == 'VALID'):
         is_valid = True
     else:
         is_valid = False
     if event_data.sysevent == 'CREATE':
-        git_handler.create(event_data)
+        builder.create(event_data)
     elif event_data.sysevent == 'DROP':
-        git_handler.drop(event_data)
+        builder.drop(event_data)
     elif event_data.sysevent == 'ALTER' and event_data.obj_type == 'TABLE':
-        git_handler.alter(event_data)
+        builder.alter(event_data)
     elif event_data.sysevent == 'GIT_COMMIT' :
         manual_commit(event_data)
         return
     else:
         return
-    commit_scheduler.schedule(event_data.obj_owner,schema_params.commit_behavior,is_valid,schema_params,
+    commit_scheduler.schedule(event_data.obj_owner,builder,schema_params.commit_behavior,is_valid,schema_params,
         "Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ),
         "%s <%s@%s>"%(event_data.os_user,event_data.os_user,email_domain))
     
@@ -51,6 +54,10 @@ while True:
     event_data = ddl_handler.recv_next()
     logging.debug("event_data" + pprint.pformat(event_data))
     if(event_data and event_data.schema_params != None):
-        deal_with_it(git_handler,event_data)
+        if(event_data.schema_params.build_system =='bobcat'):
+            builder=bobcatbuilder
+        elif(event_data.schema_params.build_system =='liquibase'):
+            builder=liquibasebuilder
+        deal_with_it(builder,event_data)
     ddl_handler.commit()
     commit_scheduler.fire()

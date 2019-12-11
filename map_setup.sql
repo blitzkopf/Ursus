@@ -26,3 +26,18 @@ Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','JOB','JOB');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','TRIGGER','TRI');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','MATERIALIZED VIEW','MVW');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','SNAPSHOT','MVW');
+
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','PACKAGE','package');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','PACKAGE BODY','packagebody');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','VIEW','view');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','TABLE','table');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','TYPE','type');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','TYPE BODY','typebody');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','PROCEDURE','procedure');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','FUNCTION','function');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','INDEX','index');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','SEQUENCE','sequence');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','JOB','job');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','TRIGGER','trigger');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','MATERIALIZED VIEW','matview');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','SNAPSHOT','matview');
