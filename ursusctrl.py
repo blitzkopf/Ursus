@@ -70,6 +70,8 @@ Commands:
             dest='type_suffix_map')
         parser.add_argument('--filename-template','--filename_template', '-t' , type=str ,
             dest='filename_template')
+        parser.add_argument('--build_system', '-b' , type=str ,
+            dest='build_system')
 
         args = parser.parse_args(argv)
 

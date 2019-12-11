@@ -1,13 +1,13 @@
 CREATE OR REPLACE PACKAGE BODY ADMIN_UI as
 
   procedure set_schema_params(p_schema	varchar2,p_git_origin_repo	varchar2,p_subdir	varchar2,p_type_prefix_map	varchar2,
-    p_type_suffix_map	varchar2, p_filename_template	varchar2) as
+    p_type_suffix_map	varchar2, p_filename_template	varchar2,p_build_system	varchar2) as
   begin
     delete from schema_params
     where schema = p_schema;
 
-    insert into schema_params ( schema,git_origin_repo,subdir,type_prefix_map,type_suffix_map,filename_template )
-    values (p_schema,p_git_origin_repo,p_subdir,p_type_prefix_map,p_type_suffix_map,p_filename_template );
+    insert into schema_params ( schema,git_origin_repo,subdir,type_prefix_map,type_suffix_map,filename_template,build_system )
+    values (p_schema,p_git_origin_repo,p_subdir,p_type_prefix_map,p_type_suffix_map,p_filename_template,p_build_system );
 
     commit;
   end;

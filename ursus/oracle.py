@@ -246,10 +246,11 @@ class DDLHandler:
                     p_subdir => :subdir,
                     p_type_prefix_map => :type_prefix_map,
                     p_type_suffix_map => :type_suffix_map,
-                    p_filename_template => :filename_template);
+                    p_filename_template => :filename_template,
+                    p_build_system => :build_system);
             end;
         """% (self.db_schema ))
-        cur.execute(None,(schema,params.git_origin_repo, params.subdir, params.type_prefix_map, params.type_suffix_map , params.filename_template))
+        cur.execute(None,(schema,params.git_origin_repo, params.subdir, params.type_prefix_map, params.type_suffix_map , params.filename_template, params.build_system ))
         self.con.commit()
         return self.get_schema_params(schema)
     
@@ -262,6 +263,10 @@ class DDLHandler:
             print(row)
             rs_priority.append(row)
         return rs_priority
-
-
-
+    
+    def get_delimiter(self,object_type):
+        if(object_type in ('PACKAGE BODY','PACKAGE','TYPE BODY','TYPE','FUNCTION','PROCEDURE')):
+            return '/'
+        else:
+            return ';'
+        
