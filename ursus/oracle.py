@@ -265,7 +265,7 @@ class DDLHandler:
         return rs_priority
     
     def get_delimiter(self,object_type):
-        if(object_type in ('PACKAGE BODY','PACKAGE','TYPE BODY','TYPE','FUNCTION','PROCEDURE')):
+        if(object_type in ('PACKAGE BODY','PACKAGE','TYPE BODY','TYPE','FUNCTION','PROCEDURE','TRIGGER')):
             return '/'
         else:
             return ';'
