@@ -26,15 +26,16 @@ Create a config file
 
 ## Configure per schema parameters
 
-    python ./ursusctrl.py --config vhgdev.cfg config_schema URSUS --git-origin-repo 'https://tfs.isbank.is/tfs/IslandsbankiCollection/IT/_git/Oracle.Git.Poc' --subdir=database --filename_template='${schema}/${schema}.${name}.${suffix}' --type_suffix_map=ursus
+    python ./ursusctrl.py --config vhgdev.cfg config_schema URSUS --git-origin-repo 'https://tfs.mydomain.com/tfs/big/IT/_git/OracleProject.Git' --subdir=database --filename_template='${schema}/${schema}.${name}.${suffix}' --type_suffix_map=ursus --buildsystem=liquibase
 
 ## Initialize branch with existing code
 
     python ./ursusctrl.py --config vhgdev.cfg init_branch URSUS
 
 ## Create the branch
+This should be taken care of with init_branch, but you might not want to start with every object commited to git.
 
-Do something like
+Do something like:
 
     git clone /code/oracle/REPO
 
