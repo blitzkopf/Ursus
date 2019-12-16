@@ -18,6 +18,7 @@ grant select on dba_views to ursus with grant option ;
 grant select on dba_tab_cols to ursus;
 grant select on dba_indexes to ursus with grant option;
 grant select on dba_dependencies  to ursus with grant option;
+grant select on dba_constraints to ursus with grant option;
 
 grant execute on dbms_aqadm to ursus;
 grant execute on dbms_aq to ursus;
