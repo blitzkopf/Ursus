@@ -9,5 +9,7 @@ CREATE OR REPLACE PACKAGE PROCESS_DDL_EVENTS authid current_user AS
 
   procedure get_depend_priority(p_obj_owner varchar2, p_map1 varchar2, p_map2 varchar2, rc out sys_refcursor);
 
+  function is_constraint_index(p_obj_owner varchar2,p_obj_name varchar2, p_obj_type varchar2 ) return number;
+
 END PROCESS_DDL_EVENTS;
 /

@@ -103,6 +103,16 @@ class DDLHandler:
                     begin %s.process_ddl_events.get_depend_priority(:object_owner,:map_name1,:map_name2,:rc_priority); end;
 
                     """ % (self.db_schema ))
+        
+        self.cons_ind_cur = self.con.cursor()
+
+        self.cons_ind_cur.prepare("""
+                    begin 
+                        :res := %s.process_ddl_events.is_constraint_index(:object_owner,:object_name,:object_type); 
+                    end;
+
+                    """ % (self.db_schema ))
+
 
     def recv_next(self):
         try:
@@ -269,4 +279,10 @@ class DDLHandler:
             return '/'
         else:
             return ';'
+    def is_constraint_index(self,schema,object_name,object_type):
+        logging.debug ("Getting index info for %s.%s : %s"%(object_type,schema,object_name))
+        is_constraint_index = self.cons_ind_cur.var(cx_Oracle.NUMBER)
+        self.cons_ind_cur.execute(None,{'res':is_constraint_index,'object_type':object_type_map.get(object_type , object_type),'object_name':object_name,'object_owner':schema }) ##,'schema':schema})
+        return is_constraint_index
+
         
