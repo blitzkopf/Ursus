@@ -9,6 +9,7 @@ from datetime import datetime
 import cx_Oracle
 import re
 import time
+from .liquibase import Changelog
 
 
 class Builder(object):
@@ -144,56 +145,21 @@ class LiquibaseBuilder(Builder):
     def get_master_chlog_file(self,schema_params):
         return self.myclone + os.sep + schema_params.subdir + os.sep + 'Changelog.xml'
 
-
-    def  add_step_to_changelog(self,changelog,changeset):
-        # brute force find end of changelog
-        with open(changelog) as f:
-            ch_lines = f.readlines()
-        lastline = ch_lines.pop()
-        findend = re.compile(r'(.*)(<\s*/\s*databaseChangeLog\s*>)')
-        while True:
-            m = findend.match(lastline)
-            if(m):
-                ch_lines.append(m.group(1))
-                ch_lines.append(changeset)
-                ch_lines.append(m.group(2))
-                break
-        with open(changelog,'w') as f:
-            for line in ch_lines:
-                f.write(line)
-        
-        ch_lines.append(changeset)
-
-
-
     def create(self,event_data):
         fullname = super(LiquibaseBuilder,self).create(event_data)
         (dir,filename) = os.path.split(fullname)
+        changelog_file = fullname+'.xml'
+        chlog = Changelog(changelog_file)
+        
         delimiter = self.ddl_handler.get_delimiter(event_data.obj_type)
-        if delimiter == '/':
-            delimiter = '^\s*/\s*$'
-        with open(fullname+'.xml','w') as f:
-            f.write('''<?xml version="1.0" encoding="UTF-8"?>
-<databaseChangeLog
-  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">''')
-            f.write('''
-            <changeSet author="{}"
-        id="{}"
-        objectQuotingStrategy="LEGACY"
-        runOnChange="true">
-    <sqlFile 
-            encoding="UTF-8"
-            path="{}"
-            relativeToChangelogFile="true"
-            endDelimiter="{}"
-            splitStatements="true"
-            stripComments="false"/>
-</changeSet>\n'''.format(event_data.os_user,time.time(),filename,delimiter)
-            )
-            f.write('</databaseChangeLog>')
+        if event_data.obj_type=='INDEX' and self.ddl_handler.is_constraint_index(event_data.obj_owner,event_data.obj_name,event_data.obj_type):
+            precond = chlog.get_precond(event_data.obj_name,'INDEX')
+        elif event_data.obj_type == 'TABLE':
+            precond = chlog.get_precond(event_data.obj_name,'TABLE')
+        else:
+            precond = ''
+        chlog.add_to_changelog('CREATE',event_data.os_user,time.time(),event_data.obj_owner,event_data.obj_name,event_data.obj_type,
+            filename=filename, delimiter=delimiter,precondition=precond)
         subprocess.call( [ "git",  "stage", fullname+'.xml'] ) 
 
     def alter(self,event_data):
@@ -203,21 +169,13 @@ class LiquibaseBuilder(Builder):
         fullname,myclone=self.get_fullname_clonedir(event_data)
         (dir,filename) = os.path.split(fullname)
         changelog_file = fullname+'.xml'
+        chlog = Changelog(changelog_file)
 
         logging.info("alter file "+changelog_file)
         delimiter = self.ddl_handler.get_delimiter(event_data.obj_type)
         if delimiter == '/':
             delimiter = '^\s*/\s*$'
-        changeset = '''
-<changeSet id="{}" author="{}">
-    <sql endDelimiter="{}"
-        splitStatements="true" 
-        stripComments="false">
-        {}
-    </sql>
-</changeSet>
-        '''.format(time.time(),event_data.os_user,delimiter,event_data.sql_text)
-        self.add_step_to_changelog(changelog_file,changeset)
+        chlog.add_to_changelog('ALTER',event_data.os_user,time.time(),event_data.obj_owner,event_data.obj_name,event_data.obj_type,statement=event_data.sql_text, delimiter=delimiter)
         #os.chdir(myclone)
         subprocess.call( [ "git",  "stage", changelog_file] ) 
         #super(BobcatBuilder,self).alter(event_data)
@@ -226,28 +184,12 @@ class LiquibaseBuilder(Builder):
         super(LiquibaseBuilder,self).drop(event_data) ## call to keep file in sync
         fullname,myclone=self.get_fullname_clonedir(event_data)
         changelog_file = fullname+'.xml'
-
+        chlog = Changelog(changelog_file)
+        chlog.reset_file = True
         logging.info("dropping in "+changelog_file)
-        with open(changelog_file,'w') as f:
-            f.write('''<?xml version="1.0" encoding="UTF-8"?>
-<databaseChangeLog
-  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">''')
-            f.write('''
-            <changeSet author="{}"
-        id="{}"
-        objectQuotingStrategy="LEGACY"
-        runOnChange="true">
-    <sql endDelimiter="{}"
-        splitStatements="true" 
-        stripComments="false">
-        {}
-    </sql>
-</changeSet>\n'''.format(event_data.os_user,time.time(),';',event_data.sql_text)
-            )
-            f.write('</databaseChangeLog>')
+        precond = chlog.get_precond(event_data.obj_name,event_data.obj_type,False)
+        chlog.add_to_changelog('DROP',event_data.os_user,time.time(),event_data.obj_owner,event_data.obj_name,event_data.obj_type,statement=event_data.sql_text,precondition=precond)
+        
         subprocess.call( [ "git",  "stage", changelog_file] ) 
 
 

@@ -95,7 +95,7 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
         --return dummy;
         res := res || dummy || chr(10) || '/';
     else
-      res := dbms_metadata.get_ddl(p_obj_type,p_obj_name,p_obj_owner);
+      res := dbms_metadata.get_ddl(p_obj_type,p_obj_name,p_obj_owner);    
     end if;
 
    return res;
@@ -130,6 +130,14 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
         select table_owner owner,table_name name,'TABLE' type,
             owner d_owner, index_name d_name, 'INDEX' d_type
         from dba_indexes
+        union all
+        select  r.owner owner,coalesce(r.index_name,r.table_name) name, 
+              case when r.index_name is not null then 'INDEX' else 'TABLE' end  type ,  
+            d.owner d_owner,d.table_name d_name, 'TABLE' d_type
+        from   dba_constraints d
+          join dba_constraints r on r.owner=d.r_owner 
+            and r.constraint_name = d.r_constraint_name 
+        where d.constraint_type = 'R'
         ),  rdep(owner,name,type, d_owner, d_name,  d_type, lvl ) as
         (
             select d.*, cast ( 1  as number ) lvl
@@ -153,6 +161,21 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
         ]' using p_obj_owner,p_map1, p_map2;
 
   end get_depend_priority;
+  
+  function is_constraint_index(p_obj_owner varchar2,p_obj_name varchar2, p_obj_type varchar2 ) return number as
+      res number;
+  begin 
+      if(p_obj_type = 'INDEX') then
+        select least(count(*),0)  
+              into res
+        from dba_constraints
+        where INDEX_NAME=p_obj_name
+            and index_owner=p_obj_owner;
+      else
+          res := 0;
+      end if;
+      return res;
+  end;
 
 END PROCESS_DDL_EVENTS;
 /
