@@ -158,7 +158,7 @@ class LiquibaseBuilder(Builder):
             precond = chlog.get_precond(event_data.obj_name,'TABLE')
         else:
             precond = ''
-        chlog.add_to_changelog('CREATE',event_data.os_user,time.time(),event_data.obj_owner,event_data.obj_name,event_data.obj_type,
+        chlog.add_to_changelog('CREATE',event_data.os_user,str(time.time()),event_data.obj_owner,event_data.obj_name,event_data.obj_type,
             filename=filename, delimiter=delimiter,precondition=precond)
         subprocess.call( [ "git",  "stage", fullname+'.xml'] ) 
 
@@ -175,7 +175,7 @@ class LiquibaseBuilder(Builder):
         delimiter = self.ddl_handler.get_delimiter(event_data.obj_type)
         if delimiter == '/':
             delimiter = '^\s*/\s*$'
-        chlog.add_to_changelog('ALTER',event_data.os_user,time.time(),event_data.obj_owner,event_data.obj_name,event_data.obj_type,statement=event_data.sql_text, delimiter=delimiter)
+        chlog.add_to_changelog('ALTER',event_data.os_user,str(time.time()),event_data.obj_owner,event_data.obj_name,event_data.obj_type,statement=event_data.sql_text, delimiter=delimiter)
         #os.chdir(myclone)
         subprocess.call( [ "git",  "stage", changelog_file] ) 
         #super(BobcatBuilder,self).alter(event_data)
@@ -188,7 +188,7 @@ class LiquibaseBuilder(Builder):
         chlog.reset_file = True
         logging.info("dropping in "+changelog_file)
         precond = chlog.get_precond(event_data.obj_name,event_data.obj_type,False)
-        chlog.add_to_changelog('DROP',event_data.os_user,time.time(),event_data.obj_owner,event_data.obj_name,event_data.obj_type,statement=event_data.sql_text,precondition=precond)
+        chlog.add_to_changelog('DROP',event_data.os_user,str(time.time()),event_data.obj_owner,event_data.obj_name,event_data.obj_type,statement=event_data.sql_text,precondition=precond)
         
         subprocess.call( [ "git",  "stage", changelog_file] ) 
 

@@ -57,8 +57,7 @@ Commands:
         for rec in ddl_handler.list_schema_objects(args.schema):
             print(rec)
             builder.create(rec)
-        builder.commit(args.schema,schema_params,"Initial commit from DB","%s <%s@%s>"%('URSUS','ursus',self.email_domain))
-        #git_handler.commit_push(myclone,"Initial commit from DB","%s <%s@%s>"%('URSUS','ursus',self.email_domain))
+        #builder.commit(args.schema,schema_params,"Initial commit from DB","%s <%s@%s>"%('URSUS','ursus',self.email_domain))
     
     def config_schema(self,argv):
         parser = argparse.ArgumentParser(
