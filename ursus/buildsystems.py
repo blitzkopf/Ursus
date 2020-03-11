@@ -11,6 +11,7 @@ import re
 import time
 from .liquibase import Changelog
 
+CL_SUFFIX='.yaml'
 
 class Builder(object):
     def __init__(self,config,ddl_handler,git_handler):
@@ -148,7 +149,7 @@ class LiquibaseBuilder(Builder):
     def create(self,event_data):
         fullname = super(LiquibaseBuilder,self).create(event_data)
         (dir,filename) = os.path.split(fullname)
-        changelog_file = fullname+'.xml'
+        changelog_file = fullname+CL_SUFFIX
         chlog = Changelog(changelog_file)
         
         delimiter = self.ddl_handler.get_delimiter(event_data.obj_type)
@@ -160,7 +161,7 @@ class LiquibaseBuilder(Builder):
             precond = ''
         chlog.add_to_changelog('CREATE',event_data.os_user,str(time.time()),event_data.obj_owner,event_data.obj_name,event_data.obj_type,
             filename=filename, delimiter=delimiter,precondition=precond)
-        subprocess.call( [ "git",  "stage", fullname+'.xml'] ) 
+        subprocess.call( [ "git",  "stage", fullname+CL_SUFFIX] ) 
 
     def alter(self,event_data):
 
@@ -168,7 +169,7 @@ class LiquibaseBuilder(Builder):
 
         fullname,myclone=self.get_fullname_clonedir(event_data)
         (dir,filename) = os.path.split(fullname)
-        changelog_file = fullname+'.xml'
+        changelog_file = fullname+CL_SUFFIX
         chlog = Changelog(changelog_file)
 
         logging.info("alter file "+changelog_file)
@@ -183,7 +184,7 @@ class LiquibaseBuilder(Builder):
     def drop(self,event_data):
         super(LiquibaseBuilder,self).drop(event_data) ## call to keep file in sync
         fullname,myclone=self.get_fullname_clonedir(event_data)
-        changelog_file = fullname+'.xml'
+        changelog_file = fullname+CL_SUFFIX
         chlog = Changelog(changelog_file)
         chlog.reset_file = True
         logging.info("dropping in "+changelog_file)
@@ -204,7 +205,7 @@ class LiquibaseBuilder(Builder):
                 relname = os.path.join(prefix,file)
                 print("file:{} ".format(relname))
                 (basename,extension) = os.path.splitext(relname)
-                if extension == '.xml':
+                if extension == CL_SUFFIX:
                     
                     pri = pri_dict.get(basename,0)
                     print("file:{} priority:{}".format(relname,pri))
@@ -223,5 +224,5 @@ class LiquibaseBuilder(Builder):
                 f.write('  <include relativeToChangelogFile="true" file="{}"/>\n'.format(file['filename']))
             f.write('</databaseChangeLog>')
         subprocess.call( [ "git",  "stage", changelog_file] ) 
-        super(LiquibaseBuilder,self).commit(owner,schema_params,message,author)
+        #super(LiquibaseBuilder,self).commit(owner,schema_params,message,author)
     

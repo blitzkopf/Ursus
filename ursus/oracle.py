@@ -135,6 +135,7 @@ class DDLHandler:
         except:
             logging.info('No SQL statement Collected')
             logging.debug(traceback.format_exc())
+            sql_text=""
         curs_schema_params =  rc_schema_params.getvalue()
         rs_schema_params = []
         for row in rows_as_dicts(curs_schema_params):

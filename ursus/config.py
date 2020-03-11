@@ -1,7 +1,10 @@
-import ConfigParser
+import sys
+if sys.version_info < (3, 0):
+    import ConfigParser
+else:
+    import configparser as ConfigParser
 import argparse
 import logging
-import sys
 
 def init_config(argv=None):
     # Do argv default this way, as doing it in the functional

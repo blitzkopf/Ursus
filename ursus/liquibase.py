@@ -31,22 +31,14 @@ class Changelog:
             except IOError:
                 return
         elif(self.format=='yaml'):
-            chl_string = ''
             try:
                 with open(self.filename) as f:
-                    for line in f.readlines():
-                        chl_string += line
+                    chl_dict=yaml.safe_load(f)
             except IOError:
                 return
 
-            chl_dict = yaml.parse(chl_string)
-    @classmethod
-    def yamler(cls,element):
-        subs =[]
-        subs = [cls.yamler(el) for el in element ]
-        #if element.tag == 'databaseChangeLog':
-            
-        return {element.tag:subs}
+            pprint.pprint(chl_dict)
+            self.changesets = chl_dict['databaseChangeLog']
 
     def write_changelog(self):
         if(self.format=='xml'):
@@ -56,17 +48,8 @@ class Changelog:
             tree.write(self.filename,pretty_print=True)
             
         elif(self.format=='yaml'):
-            #for elem in self.root.iter():
-            ychangelog = self.yamler(self.root)
-            #for elem in self.root:
-            #    key,value = self.yamler(elem)
-            #    print(elem)
-            #    print(elem.attrib)
-                
-            #chl_string = xmltodict.unparse({'databaseChangeLog':self.changesets})
-            #chl_dict = yaml.parse(ychangelog)
             with open(self.filename,'w') as f:
-                f.write(yaml.safe_dump(ychangelog) )
+                f.write(yaml.safe_dump({'databaseChangeLog':self.changesets}) )
 
     def  add_step_to_changelog(self,changeset):
         if(not self.reset_file  ):
@@ -80,45 +63,46 @@ class Changelog:
     def generate_changeset(self,event_type,author,id,schema,obj_name,obj_type,statement=None,filename=None,delimiter=';',precondition=None):
         if statement and filename:
             raise Exception("Can not specify both filename and statement {} {}".format(filename,statement))
-        changeset = ET.Element('changeSet',{'id':id,'author':author})
-        self.root.append(changeset)
+        changeset = {'id':id,'author':author}
+        changes = []
         if(precondition):
-            changeset.append(precondition)
+            changeset['preConditions']=precondition
             
             #print("adding precond"+ET.tostring(precondition))
             ##changeset['changeSet']['preCondition']=precondition['preCondition'] 
         if(statement):
-            changeset.append(ET.Element('sql',{
+            changes.append({'sql':{
                         'endDelimiter':delimiter,
                         'splitStatements':"true" ,
-                        'stripComments':"false"},text=statement)
+                        'stripComments':"false",'sql':statement}}
             )
+            
         elif (filename):
-            if(obj_type == 'TABLE'):
-                run_on_change = "false"
+            if(obj_type == 'TABLE'): # 
+                changeset['runOnChange'] = "false"
+                changeset['validCheckSum']=None # This is not really working as supposed
             else:
-                run_on_change = "true"
-            changeset.attrib['runOnChange']=run_on_change
-            changeset.append(ET.Element( 'sqlFile', {
+                changeset['runOnChange'] = "true"
+            changes.append( {'sqlFile': {
                         'endDelimiter':delimiter,
                         'splitStatements':"true" ,
                         'stripComments':"false",
                         'relativeToChangelogFile':"true",
                         'path':filename
-            }))
-        return changeset
+            }})
+        changeset['changes'] = changes
+        #self.root.append(changeset)
+        return {'changeSet':changeset }
     
     def get_precond(self,obj_name,object_type,check_if_exists=True):
         try:
             pc_prefix = obj_type_map[object_type]
         except KeyError:
             return ''
-        pc = ET.Element('preConditions',attrib={'onFail':'MARK_RAN'})
+        cond = {pc_prefix+'Exists':{pc_prefix+'Name':obj_name}}
         if(check_if_exists):  
-            ET.SubElement(ET.SubElement(pc,'not'),pc_prefix+'Exists',attrib={pc_prefix+'Name':obj_name})
-        else:
-            ET.SubElement(pc,pc_prefix+'Exists',attrib={pc_prefix+'Name':obj_name})
-        return pc
+            cond =  {'not':[cond]}
+        return [{'onFail':'MARK_RAN'},cond]
 
     def add_to_changelog(self,event_type,author,id,schema,obj_name,obj_type,statement=None,filename=None,delimiter=';',precondition=''):
         chset = self.generate_changeset(event_type,author,id,schema,obj_name,obj_type,statement,filename,delimiter,precondition)
