@@ -28,7 +28,7 @@ grant administer database trigger to ursus;-- required for ON DATABASE
 grant alter any trigger to ursus;
 grant drop any trigger to ursus;
 
-create user ursus_connector identified by  &&password2;
+create user ursus_connector identified by  "&&password2";
 
 grant  connect to ursus_connector;
 grant select on dba_objects to ursus_connector;

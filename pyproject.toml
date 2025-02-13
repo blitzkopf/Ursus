@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "ursus"
+version = "0.0.1"
+description = "Keep track of code changes in Oracle databases."
+authors = ["Yngvi Thor Sigurjonsson <blitzkopf@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+oracledb = "^2.5.1"
+configparser = "^7.1.0"
+
+[tool.poetry.scripts]
+ursusd= "ursus.scripts.ursusd:main"
+ursusctrl= "ursus.scripts.ursusctrl:main"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
