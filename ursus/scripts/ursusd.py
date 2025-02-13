@@ -1,5 +1,6 @@
 #!python3
 import traceback
+import oracledb
 import os
 import os.path
 import sys
@@ -8,6 +9,7 @@ import logging
 import pprint
 
 config,remaining_argv = ursus.init_config(sys.argv)
+oracledb.init_oracle_client()
 
 gitclones = config.get('GIT','CloneDirectory')
 gitbranch = config.get('GIT','Branch')
@@ -49,15 +51,15 @@ def deal_with_it(builder,event_data):
         "Automatic for the people (%s %s.%s (%s)) "% (event_data.sysevent,event_data.obj_owner,event_data.obj_name,event_data.obj_type ),
         "%s <%s@%s>"%(event_data.os_user,event_data.os_user,email_domain))
     
-
-while True:
-    event_data = ddl_handler.recv_next()
-    logging.debug("event_data" + pprint.pformat(event_data))
-    if(event_data and event_data.schema_params != None):
-        if(event_data.schema_params.build_system =='bobcat'):
-            builder=bobcatbuilder
-        elif(event_data.schema_params.build_system =='liquibase'):
-            builder=liquibasebuilder
-        deal_with_it(builder,event_data)
-    ddl_handler.commit()
-    commit_scheduler.fire()
+def main():
+    while True:
+        event_data = ddl_handler.recv_next()
+        logging.debug("event_data" + pprint.pformat(event_data))
+        if(event_data and event_data.schema_params != None):
+            if(event_data.schema_params.build_system =='bobcat'):
+                builder=bobcatbuilder
+            elif(event_data.schema_params.build_system =='liquibase'):
+                builder=liquibasebuilder
+            deal_with_it(builder,event_data)
+        ddl_handler.commit()
+        commit_scheduler.fire()

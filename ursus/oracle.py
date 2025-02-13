@@ -1,5 +1,5 @@
 from getpass import getpass,getuser
-import cx_Oracle 
+import oracledb 
 import logging
 import traceback
 from collections import namedtuple
@@ -19,7 +19,7 @@ object_type_map = {
     }
 
 def rows_as_dicts(cursor):
-    """ returns cx_Oracle rows as dicts """
+    """ returns oracledb rows as dicts """
     colnames = [i[0].lower() for i in cursor.description]
     logging.debug("colnames:"+str(colnames))
     for row in cursor:
@@ -45,7 +45,8 @@ class DDLHandler:
         
         pw=getpass("Oracle password for %s:" % (self.db_username) )
         os.environ['NLS_LANG']='.AL32UTF8'
-        self.con = cx_Oracle.connect(user=self.db_username,password=pw,dsn=self.db_connect_string)
+        print("Connecting to %s as %s %s" % (self.db_connect_string,self.db_username,pw))
+        self.con = oracledb.connect(user=self.db_username,password=pw,dsn=self.db_connect_string)
         setup_cur = self.con.cursor()
         ## TODO: Make these parameter configurable.
         setup_cur.execute("""
@@ -61,18 +62,18 @@ class DDLHandler:
         self.cur = self.con.cursor()
         # sysevent out VARCHAR2,login_user out VARCHAR2,instance_num out NUMBER,database_name out VARCHAR2, 
         #    obj_owner out VARCHAR, obj_name out VARCHAR, obj_type out VARCHAR, sql_text out CLOB
-        self.sysevent = self.cur.var(cx_Oracle.STRING)
-        self.login_user = self.cur.var(cx_Oracle.STRING)
-        self.os_user = self.cur.var(cx_Oracle.STRING)
-        self.instance_num = self.cur.var(cx_Oracle.NUMBER)
-        self.database_name = self.cur.var(cx_Oracle.STRING)
-        self.obj_owner = self.cur.var(cx_Oracle.STRING)
-        self.obj_name = self.cur.var(cx_Oracle.STRING)
-        self.obj_type = self.cur.var(cx_Oracle.STRING)
-        self.sql_text = self.cur.var(cx_Oracle.CLOB)
-        self.obj_status = self.cur.var(cx_Oracle.STRING)
+        self.sysevent = self.cur.var(oracledb.STRING)
+        self.login_user = self.cur.var(oracledb.STRING)
+        self.os_user = self.cur.var(oracledb.STRING)
+        self.instance_num = self.cur.var(oracledb.NUMBER)
+        self.database_name = self.cur.var(oracledb.STRING)
+        self.obj_owner = self.cur.var(oracledb.STRING)
+        self.obj_name = self.cur.var(oracledb.STRING)
+        self.obj_type = self.cur.var(oracledb.STRING)
+        self.sql_text = self.cur.var(oracledb.CLOB)
+        self.obj_status = self.cur.var(oracledb.STRING)
 
-        ##self.rc_schema_params = self.cur.var(cx_Oracle.CURSOR)
+        ##self.rc_schema_params = self.cur.var(oracledb.CURSOR)
         self.cur.prepare("""
             begin 
                 %s.process_ddl_events.RECV(:sysevent,:login_user,:os_user,:instance_num,:database_name,
@@ -91,7 +92,7 @@ class DDLHandler:
 
         self.map_cur = self.con.cursor()
 
-        self.map_result = self.map_cur.var(cx_Oracle.STRING)
+        self.map_result = self.map_cur.var(oracledb.STRING)
         self.map_cur.prepare("""
 
                     begin :res := %s.process_ddl_events.map(:map_name,:key,:default_value); end;
@@ -116,10 +117,10 @@ class DDLHandler:
 
     def recv_next(self):
         try:
-            rc_schema_params = self.cur.var(cx_Oracle.CURSOR)
+            rc_schema_params = self.cur.var(oracledb.CURSOR)
             self.cur.execute(None,(self.sysevent, self.login_user, self.os_user, self.instance_num,self.database_name,
                 self.obj_owner,self.obj_name,self.obj_type,self.obj_status,self.sql_text,rc_schema_params,10))
-        except cx_Oracle.DatabaseError as ex:
+        except oracledb.DatabaseError as ex:
             error, = ex.args
             if(error.code == 25228):
                 logging.debug("Receive timeout!")
@@ -158,7 +159,7 @@ class DDLHandler:
 
     def get_source(self,schema,object_name,object_type):
         logging.debug ("Getting source for %s.%s : %s"%(object_type,schema,object_name))
-        src = self.src_cur.var(cx_Oracle.CLOB)
+        src = self.src_cur.var(oracledb.CLOB)
         self.src_cur.execute(None,{'res':src,'object_type':object_type_map.get(object_type , object_type),'object_name':object_name,'object_owner':schema }) ##,'schema':schema})
         return src
 
@@ -203,8 +204,8 @@ class DDLHandler:
 
     def list_schema_objects(self,schema):
         cur = self.con.cursor()
-        rc = cur.var(cx_Oracle.CURSOR)
-        rc_schema_params = cur.var(cx_Oracle.CURSOR)
+        rc = cur.var(oracledb.CURSOR)
+        rc_schema_params = cur.var(oracledb.CURSOR)
         cur.prepare("""
                 begin 
                     :rc := %s.admin_ui.list_schema_objects(:p_owner,:rc_schema_params);
@@ -237,7 +238,7 @@ class DDLHandler:
                 %s.admin_ui.get_schema_params(:schema,:rc_schema_params);
             end;
         """% (self.db_schema ))
-        rc_schema_params = cur.var(cx_Oracle.CURSOR)
+        rc_schema_params = cur.var(oracledb.CURSOR)
         cur.execute(None,(schema,rc_schema_params))
         # TODO There must be a more reasobale way to do this.
         rs_schema_params = []
@@ -265,7 +266,7 @@ class DDLHandler:
         return self.get_schema_params(schema)
     
     def get_depend_priority(self,schema,map_name1,map_name2):
-        rc_priority = self.priority_cur.var(cx_Oracle.CURSOR)
+        rc_priority = self.priority_cur.var(oracledb.CURSOR)
         self.priority_cur.execute(None,{'object_owner':schema,'map_name1':map_name1,'map_name2':map_name2,'rc_priority':rc_priority})
         curs_priority =  rc_priority.getvalue()
         rs_priority = []
@@ -281,7 +282,7 @@ class DDLHandler:
             return ';'
     def is_constraint_index(self,schema,object_name,object_type):
         logging.debug ("Getting index info for %s.%s : %s"%(object_type,schema,object_name))
-        is_constraint_index = self.cons_ind_cur.var(cx_Oracle.NUMBER)
+        is_constraint_index = self.cons_ind_cur.var(oracledb.NUMBER)
         self.cons_ind_cur.execute(None,{'res':is_constraint_index,'object_type':object_type_map.get(object_type , object_type),'object_name':object_name,'object_owner':schema }) ##,'schema':schema})
         return is_constraint_index
 

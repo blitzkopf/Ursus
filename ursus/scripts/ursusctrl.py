@@ -2,12 +2,14 @@
 import argparse
 import sys
 import ursus
+import oracledb
 
 
 class UrsusCtrl(object):
     def __init__(self):
 
         config,remaining_argv = ursus.init_config(sys.argv)
+        oracledb.init_oracle_client()
 
         self.gitclones = config.get('GIT','CloneDirectory')
         self.gitbranch = config.get('GIT','Branch')
@@ -94,6 +96,9 @@ Commands:
         print(schema_params)
 
 
-if __name__ == '__main__':
+def main():
     UrsusCtrl()
+
+if __name__ == '__main__':
+    main()
 

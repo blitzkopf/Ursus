@@ -41,3 +41,4 @@ Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','JOB','job');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','TRIGGER','trigger');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','MATERIALIZED VIEW','matview');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','SNAPSHOT','matview');
+commit;

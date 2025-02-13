@@ -6,7 +6,7 @@ import logging
 import json
 from datetime import datetime
 ## ULGY: need to remove this dependency on oracle 
-import cx_Oracle
+import oracledb
 import re
 import time
 from .liquibase import Changelog
@@ -60,7 +60,7 @@ class Builder(object):
                 if file_footer:
                     f.write(file_footer)
             subprocess.call( [ "git",  "stage", fullname] ) 
-        except cx_Oracle.DatabaseError as e:
+        except oracledb.DatabaseError as e:
             oerr, = e.args
             logging.error("ORA-"+str(oerr.code)+" "+event_data.obj_type+" "+(event_data.obj_name[:6]))
             if(oerr.code == 31603 and event_data.obj_type == 'SEQUENCE' and event_data.obj_name[:6] == 'ISEQ$$' ):
