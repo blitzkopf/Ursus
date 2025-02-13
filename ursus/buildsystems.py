@@ -23,16 +23,16 @@ class Builder(object):
 
     def __init__(self, config, ddl_handler, git_handler):
         """Initialize the builder."""
-        self.gitclones = config.get("GIT", "CloneDirectory")
+        self.gitrepos = config.get("GIT", "RepoDirectory")
         self.gitbranch = config.get("GIT", "Branch")
         self.email_domain = config.get("GENERAL", "EmailDomain")
         ## FIXME: Don't use fixed name :)
-        self.myclone = self.gitclones + os.sep + "Oracle.Git.Poc"
+        ## self.myrepo = self.gitrepos + os.sep + "Oracle.Git.Poc"
         self.ddl_handler = ddl_handler
         self.git_handler = git_handler
 
-    def get_fullname_clonedir(self, event_data):
-        """Get the full name of the file and the clone directory."""
+    def get_fullname_repodir(self, event_data):
+        """Get the full name of the file and the repo directory."""
         if event_data.schema_params.type_suffix_map:
             suffix = self.ddl_handler.map(
                 event_data.schema_params.type_suffix_map, event_data.obj_type, event_data.obj_type
@@ -55,13 +55,14 @@ class Builder(object):
             prefix=prefix,
         )
         # fullname = myclone + os.sep + filename
-        fullname = self.myclone + os.sep + event_data.schema_params.subdir + os.sep + filename
+        myrepo = self.git_handler.reponame(event_data.schema_params.schema)
+        fullname = myrepo + os.sep + event_data.schema_params.subdir + os.sep + filename
         ## TODO find clone dir
-        return fullname, self.myclone
+        return fullname, myrepo
 
     def create(self, event_data, file_header=None, file_footer=None):
         """Generate a file for object CREATE statement."""
-        fullname, myclone = self.get_fullname_clonedir(event_data)
+        fullname, myrepo = self.get_fullname_repodir(event_data)
         dir = os.path.dirname(fullname)
         if not os.path.exists(dir):
             os.makedirs(dir)
@@ -70,7 +71,7 @@ class Builder(object):
 
         logging.info("committing file " + fullname)
 
-        os.chdir(myclone)
+        os.chdir(myrepo)
         try:
             with open(fullname, "w") as f:
                 if file_header:
@@ -101,7 +102,7 @@ class Builder(object):
 
     def drop(self, event_data):
         """Generate a file for object DROP statement."""
-        fullname, myclone = self.get_fullname_clonedir(event_data)
+        fullname, myrepo = self.get_fullname_repodir(event_data)
         dir = os.path.dirname(fullname)
         if not os.path.exists(dir):
             os.makedirs(dir)
@@ -110,7 +111,7 @@ class Builder(object):
 
         logging.info("removing file " + fullname)
 
-        os.chdir(myclone)
+        os.chdir(myrepo)
 
         subprocess.call(["git", "rm", fullname])
 
@@ -122,7 +123,8 @@ class Builder(object):
         dependency_priority = self.ddl_handler.get_depend_priority(
             owner, schema_params.type_prefix_map, schema_params.type_suffix_map
         )
-        pri_file = self.myclone + os.sep + schema_params.subdir + os.sep + ".ursus_dependency_priority"
+        myrepo = self.git_handler.reponame(schema_params.schema)
+        pri_file = myrepo + os.sep + schema_params.subdir + os.sep + ".ursus_dependency_priority"
         try:
             with open(pri_file) as json_file:
                 pri_dict = json.load(json_file)
@@ -145,7 +147,8 @@ class Builder(object):
 
     def commit(self, owner, schema_params, message, author):
         """Commit the changes to the git repository."""
-        self.git_handler.commit_push(self.myclone, message, author)
+        myrepo = self.git_handler.reponame(schema_params.schema)
+        self.git_handler.commit_push(myrepo, message, author, schema_params.git_origin_repo)
 
 
 class BobcatBuilder(Builder):
@@ -157,7 +160,7 @@ class BobcatBuilder(Builder):
 
     def alter(self, event_data):
         """Generate a file for object ALTER statement."""
-        fullname, myclone = self.get_fullname_clonedir(event_data)
+        fullname, myrepo = self.get_fullname_repodir(event_data)
         (dir, filename) = os.path.split(fullname)
         dir = os.path.join(dir, "changes")
         if not os.path.exists(dir):
@@ -167,7 +170,7 @@ class BobcatBuilder(Builder):
         ##    raise
         logging.info("alter file " + fullname)
 
-        os.chdir(myclone)
+        os.chdir(myrepo)
         with open(fullname, "a+") as f:
             f.write("-- %s, change by: %s\n" % (datetime.now(), event_data.os_user))
             f.write(event_data.sql_text)
@@ -190,7 +193,8 @@ class LiquibaseBuilder(Builder):
 
     def get_master_chlog_file(self, schema_params):
         """Get the master changelog file."""
-        return self.myclone + os.sep + schema_params.subdir + os.sep + "Changelog.xml"
+        myrepo = self.git_handler.reponame(schema_params.schema)
+        return myrepo + os.sep + schema_params.subdir + os.sep + "Changelog.xml"
 
     def create(self, event_data):
         """Generate a file for object CREATE statement."""
@@ -225,7 +229,7 @@ class LiquibaseBuilder(Builder):
         """Generate a file for object ALTER statement."""
         super(LiquibaseBuilder, self).create(event_data)  ## call to keep file in sync
 
-        fullname, myclone = self.get_fullname_clonedir(event_data)
+        fullname, myrepo = self.get_fullname_repodir(event_data)
         (dir, filename) = os.path.split(fullname)
         changelog_file = fullname + ".xml"
         chlog = Changelog(changelog_file)
@@ -251,7 +255,7 @@ class LiquibaseBuilder(Builder):
     def drop(self, event_data):
         """Generate a file for object DROP statement."""
         super(LiquibaseBuilder, self).drop(event_data)  ## call to keep file in sync
-        fullname, myclone = self.get_fullname_clonedir(event_data)
+        fullname, myrepo = self.get_fullname_repodir(event_data)
         changelog_file = fullname + ".xml"
         chlog = Changelog(changelog_file)
         chlog.reset_file = True

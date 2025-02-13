@@ -12,8 +12,8 @@ Create a config file
     # Email domain used for author email address of commit
     EmailDomain = mydomain.com
     [GIT]
-    # the directory where the system keeps it clones (/tmp is a really bad choice)
-    CloneDirectory = /tmp/clones
+    # the directory where the system keeps it repos (/tmp is a really bad choice)
+    RepoDirectory = /tmp/repos
     # the branch name used for DB code
     Branch = ursus
     [DATABASE]
@@ -33,6 +33,7 @@ Create a config file
     python ./ursusctrl.py --config vhgdev.cfg init_branch URSUS
 
 ## Create the branch
+
 This should be taken care of with init_branch, but you might not want to start with every object commited to git.
 
 Do something like:

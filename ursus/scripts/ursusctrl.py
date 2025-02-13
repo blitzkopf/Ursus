@@ -20,7 +20,7 @@ class UrsusCtrl(object):
         config, remaining_argv = ursus.init_config(sys.argv)
         oracledb.init_oracle_client()
 
-        self.gitclones = config.get("GIT", "CloneDirectory")
+        self.gitrepos = config.get("GIT", "RepoDirectory")
         self.gitbranch = config.get("GIT", "Branch")
         self.db_connect_string = config.get("DATABASE", "ConnectString")
         self.db_username = config.get("DATABASE", "Username")
@@ -60,7 +60,7 @@ Commands:
         git_handler = ursus.GITHandler(self.config)
 
         schema_params = ddl_handler.get_schema_params(args.schema)
-        _myclone = git_handler.setup_branch(schema_params)
+        _myrepo = git_handler.setup_branch(schema_params)
         if schema_params.build_system == "liquibase":
             builder = ursus.LiquibaseBuilder(self.config, ddl_handler, git_handler)
         elif schema_params.build_system == "bobcat":
