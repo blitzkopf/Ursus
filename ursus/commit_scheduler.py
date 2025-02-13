@@ -69,7 +69,7 @@ class CommitScheduler:
     def fire(self):
         """Fire the scheduled commits if their time is up."""
         now = time.time()
-        for schema, val in self.commit_queue.items():
+        for schema, val in list(self.commit_queue.items()):
             print("Fire!" + schema + " at " + str(datetime.fromtimestamp(val["commit_time"])))
             if val["commit_time"] <= now:
                 val["builder"].commit(schema, val["schema_params"], val["message"], val["author"])
