@@ -19,8 +19,10 @@ Create a config file
     [DATABASE]
     # database to work with can be TNSNAME if set up or full description
     ConnectString = (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=<dbhostname>)(PORT=1521))(CONNECT_DATA=(SID=<dbsid>)))
-    # username to connect as ( still have not figured out where to keep password)
+    # username to connect as
     Username = URSUS_RUNNER
+    # password to connect with read from ENV variable URSUS_PASSWORD
+    Password = ${URSUS_PASSWORD}
     # Schema name of installation , should be separate from the user that connects to limit security impact
     Schema = URSUS
 
