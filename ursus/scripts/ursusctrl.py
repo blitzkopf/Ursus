@@ -34,7 +34,7 @@ class UrsusCtrl(object):
 
 Commands:
     config_schema Configure parameters for schema
-    init_schema   Create local branch and initialize from schema
+    init_branch   Create local branch and initialize from schema
     list          Download objects and refs from another repository
 """,
         )

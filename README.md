@@ -26,11 +26,11 @@ Create a config file
 
 ## Configure per schema parameters
 
-    python ./ursusctrl.py --config vhgdev.cfg config_schema URSUS --git-origin-repo 'https://tfs.mydomain.com/tfs/big/IT/_git/OracleProject.Git' --subdir=database --filename_template='${schema}/${schema}.${name}.${suffix}' --type_suffix_map=ursus --buildsystem=liquibase
+    python ./ursusctrl.py --config mirora02.cfg config_schema URSUS --git-origin-repo 'https://tfs.mydomain.com/tfs/big/IT/_git/OracleProject.Git' --subdir=database --filename_template='${schema}/${schema}.${name}.${suffix}' --type_suffix_map=ursus --build_system=liquibase
 
 ## Initialize branch with existing code
 
-    python ./ursusctrl.py --config vhgdev.cfg init_branch URSUS
+    python ./ursusctrl.py --config mirora02.cfg init_branch URSUS
 
 ## Create the branch
 
