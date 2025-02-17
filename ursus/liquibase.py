@@ -2,6 +2,9 @@
 
 import re
 
+import yaml
+from lxml import etree as ET
+
 obj_type_map = {"INDEX": "index", "TABLE": "table", "PACKAGE": "package", "PACKAGE BODY": "packageBody"}
 
 obj_type_lb_map = {"INDEX": "Index", "TABLE": "Table", "PACKAGE": "Package", "PACKAGE BODY": "PackageBody"}
@@ -14,42 +17,50 @@ class Changelog:
         """Initialize the class with the filename of the changelog."""
         self.filename = filename
         self.reset_file = False
+        self.changesets = []
+        self.format = "yaml"
+        # self.root=ET.Element('databaseChangeLog',attrib={
+        #          'xmlns':"http://www.liquibase.org/xml/ns/dbchangelog"},
+        #          nsmap= {'xsi': "http://www.w3.org/2001/XMLSchema-instance" }
+        #         )
+        # self.root.attrib['{http://www.w3.org/2001/XMLSchema-instance}schemaLocation']='http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd'
+
+    def read_changelog(self):
+        if self.format == "xml":
+            try:
+                tree = ET.parse(self.filename)
+                self.root = tree.getroot()
+                self.changesets = self.root.findall("changeSet")
+            except IOError:
+                return
+        elif self.format == "yaml":
+            try:
+                with open(self.filename) as f:
+                    chl_dict = yaml.safe_load(f)
+            except IOError:
+                return
+
+            # pprint.pprint(chl_dict)
+            self.changesets = chl_dict["databaseChangeLog"]
+
+    def write_changelog(self):
+        if self.format == "xml":
+            tree = ET.ElementTree(self.root)
+            # ET.register_namespace('', 'http://www.liquibase.org/xml/ns/dbchangelog')
+
+            tree.write(self.filename, pretty_print=True)
+
+        elif self.format == "yaml":
+            with open(self.filename, "w") as f:
+                f.write(yaml.safe_dump({"databaseChangeLog": self.changesets}))
 
     def add_step_to_changelog(self, changeset):
-        """Add a changeset to the end of changelog."""
         if not self.reset_file:
-            try:
-                # brute force find end of changelog
-                with open(self.filename) as f:
-                    ch_lines = f.readlines()
-                lastline = ch_lines.pop()
-                findend = re.compile(r"(.*)(<\s*/\s*databaseChangeLog\s*>)")
-                while True:
-                    m = findend.match(lastline)
-                    if m:
-                        ch_lines.append(m.group(1))
-                        ch_lines.append(changeset)
-                        ch_lines.append(m.group(2))
-                        break
-                    lastline = ch_lines.pop()
-            except IOError:
-                self.reset_file = True
+            self.read_changelog()
+            self.changesets.append(changeset)
         if self.reset_file:
-            ch_lines = [
-                """<?xml version="1.0" encoding="UTF-8"?>
-<databaseChangeLog
-  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
-""",
-                changeset,
-                "</databaseChangeLog>",
-            ]
-
-        with open(self.filename, "w") as f:
-            for line in ch_lines:
-                f.write(line)
+            self.changesets = [changeset]
+        self.write_changelog()
         self.reset_file = False
 
     def generate_changeset(
@@ -63,49 +74,46 @@ class Changelog:
         statement=None,
         filename=None,
         delimiter=";",
-        precondition="",
+        precondition=None,
     ):
         """Generate a liquibase changeset for the object."""
         if statement and filename:
             raise Exception("Can not specify both filename and statement {} {}".format(filename, statement))
+        changeset = {"id": id, "author": author}
+        changes = []
+        if precondition:
+            changeset["preConditions"] = precondition
         if statement:
-            changeset = """
-    <changeSet author="{}" id="{}">
-        {}
-        <sql endDelimiter="{}"
-            splitStatements="true"
-            stripComments="false">
-            {}
-        </sql>
-    </changeSet>
-            """.format(author, id, precondition, delimiter, statement)
+            changes.append(
+                {
+                    "sql": {
+                        "endDelimiter": delimiter,
+                        "splitStatements": True,
+                        "stripComments": False,
+                        "sqlText": statement,
+                    }
+                }
+            )
         elif filename:
             if obj_type == "TABLE":
-                run_on_change = "false"
+                run_on_change = False
             else:
-                run_on_change = "true"
-            changeset = """
-    <changeSet author="{}"
-        id="{}"
-        objectQuotingStrategy="LEGACY"
-        runOnChange="{}">
-        {}
-        <sqlFile
-            encoding="UTF-8"
-            path="{}"
-            relativeToChangelogFile="true"
-            endDelimiter="{}"
-            splitStatements="true"
-            stripComments="false"/>
-    </changeSet>\n""".format(
-                author,
-                id,
-                run_on_change,
-                precondition,
-                filename,
-                delimiter,
+                run_on_change = True
+            changes.append(
+                {
+                    "sqlFile": {
+                        "encoding": "UTF-8",
+                        "path": filename,
+                        "relativeToChangelogFile": True,
+                        "endDelimiter": delimiter,
+                        "splitStatements": True,
+                        "stripComments": False,
+                        "runOnChange": run_on_change,
+                    }
+                }
             )
-        return changeset
+        changeset["changes"] = changes
+        return {"changeSet": changeset}
 
     def get_precond(self, obj_name, object_type, check_if_exists=True):
         """Generate a liquibase precondition for the object."""
@@ -113,18 +121,10 @@ class Changelog:
             pc_prefix = obj_type_map[object_type]
         except KeyError:
             return ""
+        cond = {pc_prefix + "Exists": {pc_prefix + "Name": obj_name}}
         if check_if_exists:
-            return """
-    <preConditions onFail="MARK_RAN">
-        <not><{0}Exists  {0}Name="{1}" /></not>
-    </preConditions>
-""".format(pc_prefix, obj_name)
-        else:
-            return """
-    <preConditions onFail="MARK_RAN">
-        <{0}Exists  {0}Name="{1}" />
-    </preConditions>
-""".format(pc_prefix, obj_name)
+            cond = {"not": cond}
+        return [{"onFail": "MARK_RAN"}, cond]
 
     def add_to_changelog(
         self,

@@ -14,8 +14,11 @@ from string import Template
 
 ## ULGY: need to remove this dependency on oracle
 import oracledb
+import yaml
 
 from .liquibase import Changelog
+
+_LOG = logging.getLogger(__name__)
 
 
 class Builder(object):
@@ -194,13 +197,13 @@ class LiquibaseBuilder(Builder):
     def get_master_chlog_file(self, schema_params):
         """Get the master changelog file."""
         myrepo = self.git_handler.reponame(schema_params.schema)
-        return myrepo + os.sep + schema_params.subdir + os.sep + "Changelog.xml"
+        return myrepo + os.sep + schema_params.subdir + os.sep + "Changelog.yaml"
 
     def create(self, event_data):
         """Generate a file for object CREATE statement."""
         fullname = super(LiquibaseBuilder, self).create(event_data)
         (dir, filename) = os.path.split(fullname)
-        changelog_file = fullname + ".xml"
+        changelog_file = fullname + ".yaml"
         chlog = Changelog(changelog_file)
 
         delimiter = self.ddl_handler.get_delimiter(event_data.obj_type)
@@ -223,7 +226,7 @@ class LiquibaseBuilder(Builder):
             delimiter=delimiter,
             precondition=precond,
         )
-        subprocess.call(["git", "stage", fullname + ".xml"])
+        subprocess.call(["git", "stage", fullname + ".yaml"])
 
     def alter(self, event_data):
         """Generate a file for object ALTER statement."""
@@ -231,7 +234,7 @@ class LiquibaseBuilder(Builder):
 
         fullname, myrepo = self.get_fullname_repodir(event_data)
         (dir, filename) = os.path.split(fullname)
-        changelog_file = fullname + ".xml"
+        changelog_file = fullname + ".yaml"
         chlog = Changelog(changelog_file)
 
         logging.info("alter file " + changelog_file)
@@ -256,10 +259,10 @@ class LiquibaseBuilder(Builder):
         """Generate a file for object DROP statement."""
         super(LiquibaseBuilder, self).drop(event_data)  ## call to keep file in sync
         fullname, myrepo = self.get_fullname_repodir(event_data)
-        changelog_file = fullname + ".xml"
+        changelog_file = fullname + ".yaml"
         chlog = Changelog(changelog_file)
         chlog.reset_file = True
-        logging.info("dropping in " + changelog_file)
+        logging.info("dropping " + changelog_file)
         precond = chlog.get_precond(event_data.obj_name, event_data.obj_type, False)
         chlog.add_to_changelog(
             "DROP",
@@ -278,30 +281,28 @@ class LiquibaseBuilder(Builder):
         """Commit the changes to the git repository."""
         pri_dict = self.prepare_pri_file(owner, schema_params)
         files = []
-        print("spooling files {}".format(os.getcwd()))
-        for dirpath, _dirnames, filenames in os.walk("database/URSUS"):
-            prefix = os.path.relpath(dirpath, "database")
-            print("path:{}".format(dirpath))
+        db_code_dir = schema_params.subdir
+        changelog_filename = self.get_master_chlog_file(schema_params)
+        _LOG.debug("changelog file:{}".format(changelog_filename))
+        _LOG.debug("spooling files {}".format(os.getcwd()))
+        for dirpath, _dirnames, filenames in os.walk(db_code_dir):  # do we need the subdir from filename_template?
+            prefix = os.path.relpath(dirpath, db_code_dir)
+            _LOG.debug("path:{}".format(dirpath))
             for file in filenames:
                 relname = os.path.join(prefix, file)
-                print("file:{} ".format(relname))
+                _LOG.debug("file:{} ".format(relname))
                 (basename, extension) = os.path.splitext(relname)
-                if extension == ".xml":
+                if dirpath == db_code_dir and file == "Changelog.yaml":
+                    continue
+                if extension == ".yaml":
                     pri = pri_dict.get(basename, 0)
-                    print("file:{} priority:{}".format(relname, pri))
+                    _LOG.debug("file:{} priority:{}".format(relname, pri))
                     files.append({"filename": relname, "priority": pri})
+        includes = []
+        for file in sorted(files, key=lambda f: f["priority"]):
+            includes.append({"include": {"relativeToChangelogFile": True, "file": file["filename"]}})
 
-        changelog_file = self.get_master_chlog_file(schema_params)
-        with open(changelog_file, "w") as f:
-            f.write("""<?xml version="1.0" encoding="UTF-8"?>
-<databaseChangeLog
-  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
-""")
-            for file in sorted(files, key=lambda f: f["priority"]):
-                f.write('  <include relativeToChangelogFile="true" file="{}"/>\n'.format(file["filename"]))
-            f.write("</databaseChangeLog>")
-        subprocess.call(["git", "stage", changelog_file])
+        with open(changelog_filename, "w") as f:
+            f.write(yaml.dump({"databaseChangeLog": includes}))
+
         super(LiquibaseBuilder, self).commit(owner, schema_params, message, author)
