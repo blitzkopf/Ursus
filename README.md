@@ -19,18 +19,20 @@ Create a config file
     [DATABASE]
     # database to work with can be TNSNAME if set up or full description
     ConnectString = (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=<dbhostname>)(PORT=1521))(CONNECT_DATA=(SID=<dbsid>)))
-    # username to connect as ( still have not figured out where to keep password)
+    # username to connect as
     Username = URSUS_RUNNER
+    # password to connect with read from ENV variable URSUS_PASSWORD
+    Password = ${URSUS_PASSWORD}
     # Schema name of installation , should be separate from the user that connects to limit security impact
     Schema = URSUS
 
 ## Configure per schema parameters
 
-    python ./ursusctrl.py --config vhgdev.cfg config_schema URSUS --git-origin-repo 'https://tfs.mydomain.com/tfs/big/IT/_git/OracleProject.Git' --subdir=database --filename_template='${schema}/${schema}.${name}.${suffix}' --type_suffix_map=ursus --buildsystem=liquibase
+    python ./ursusctrl.py --config mirora02.cfg config_schema URSUS --git-origin-repo 'https://tfs.mydomain.com/tfs/big/IT/_git/OracleProject.Git' --subdir=database --filename_template='${schema}/${schema}.${name}.${suffix}' --type_suffix_map=ursus --build_system=liquibase
 
 ## Initialize branch with existing code
 
-    python ./ursusctrl.py --config vhgdev.cfg init_branch URSUS
+    python ./ursusctrl.py --config mirora02.cfg init_branch URSUS
 
 ## Create the branch
 

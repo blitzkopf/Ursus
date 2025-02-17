@@ -59,10 +59,14 @@ class DDLHandler:
         self.db_connect_string = config.get("DATABASE", "ConnectString")
         self.db_username = config.get("DATABASE", "Username")
         self.db_schema = config.get("DATABASE", "Schema")
+        self.db_password = config.get("DATABASE", "Password")
 
-        pw = getpass("Oracle password for %s:" % (self.db_username))
+        if not self.db_password:
+            pw = getpass("Oracle password for %s:" % (self.db_username))
+        else:
+            pw = self.db_password
         os.environ["NLS_LANG"] = ".AL32UTF8"
-        print("Connecting to %s as %s %s" % (self.db_connect_string, self.db_username, pw))
+        print("Connecting to %s as %s" % (self.db_connect_string, self.db_username))
         self.con = oracledb.connect(user=self.db_username, password=pw, dsn=self.db_connect_string)
         setup_cur = self.con.cursor()
         ## TODO: Make these parameter configurable.

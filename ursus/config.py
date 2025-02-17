@@ -2,8 +2,9 @@
 
 import argparse
 import logging
+import os
 import sys
-from configparser import ConfigParser
+from configparser import ConfigParser, ExtendedInterpolation
 
 
 def init_config(argv=None):
@@ -43,10 +44,10 @@ def init_config(argv=None):
 
     if args.config_file:
         config_file = args.config_file
-        config = ConfigParser()
+        config = ConfigParser(os.environ, interpolation=ExtendedInterpolation())
         logging.info("Reading configuration from %s" % (config_file))
         config.read([config_file])
-        defaults.update(dict(config.items("GENERAL")))
+        # defaults.update(dict(config.items("GENERAL")))
 
     argp = argparse.ArgumentParser(
         # Inherit options from config_parser
