@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ursus"
-version = "0.0.1"
+version = "0.1.0"
 description = "Keep track of code changes in Oracle databases."
 authors = ["Yngvi Thor Sigurjonsson <blitzkopf@gmail.com>"]
 readme = "README.md"
