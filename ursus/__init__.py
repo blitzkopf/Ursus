@@ -6,4 +6,4 @@ from .config import init_config
 from .git import GITHandler
 from .oracle import DDLHandler
 
-__all__ = ["BobcatBuilder", "LiquibaseBuilder", "CommitScheduler", "init_config", "GITHandler", "DDLHandler"]
+__all__ = ["BobcatBuilder", "LiquibaseBuilder", "CommitScheduler", "init_config", "GITHandler", "DDLHandler", "LOGGER"]

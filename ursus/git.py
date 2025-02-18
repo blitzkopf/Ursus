@@ -4,6 +4,8 @@ import logging
 import os
 import subprocess
 
+LOGGER = logging.getLogger(__name__)
+
 
 class GITHandler:
     """Class to handle GIT operations."""
@@ -28,33 +30,33 @@ class GITHandler:
 
     def setup_branch(self, schema_params):
         """Clone repository and setup a branch in the GIT repository."""
-        logging.debug("changin to repo dir %s" % (self.gitrepos))
+        LOGGER.debug("changin to repo dir %s" % (self.gitrepos))
         os.chdir(self.gitrepos)
         ##git clone /code/oracle/REPO
         myrepo = self.reponame(schema_params.schema)
 
         if schema_params.git_origin_repo:
             subprocess.call(["git", "clone", schema_params.git_origin_repo, myrepo])
-            logging.debug("changin to  %s" % (myrepo))
+            LOGGER.debug("changin to  %s" % (myrepo))
             os.chdir(myrepo)
             # git checkout -b ursus
-            logging.debug("RUNNING git checkout  -b  %s" % (self.gitbranch))
+            LOGGER.debug("RUNNING git checkout  -b  %s" % (self.gitbranch))
             subprocess.call(["git", "checkout", "-b", self.gitbranch])
             # git branch --set-upstream-to=origin/ursus ursus
-            logging.debug("RUNNING git branch --set-upstream-to=origin/%s %s" % (self.gitbranch, self.gitbranch))
+            LOGGER.debug("RUNNING git branch --set-upstream-to=origin/%s %s" % (self.gitbranch, self.gitbranch))
             subprocess.call(["git", "branch", "--set-upstream-to=origin/%s" % (self.gitbranch), self.gitbranch])
             # git pull
-            logging.debug("RUNNING git pull")
+            LOGGER.debug("RUNNING git pull")
             subprocess.call(["git", "pull"])
             # git push origin ursus
             subprocess.call(["git", "push", "--set-upstream", "origin", "ursus"])
         else:
             ##git init /code/oracle/REPO
             subprocess.call(["git", "init", myrepo])
-            logging.debug("changin to  %s" % (myrepo))
+            LOGGER.debug("changin to  %s" % (myrepo))
             os.chdir(myrepo)
             # git checkout -b ursus
-            logging.debug("RUNNING git checkout  -b  %s" % (self.gitbranch))
+            LOGGER.debug("RUNNING git checkout  -b  %s" % (self.gitbranch))
             subprocess.call(["git", "checkout", "-b", self.gitbranch])
 
         return myrepo

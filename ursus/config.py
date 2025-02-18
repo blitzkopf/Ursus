@@ -6,6 +6,16 @@ import os
 import sys
 from configparser import ConfigParser, ExtendedInterpolation
 
+from cysystemd.journal import JournaldLogHandler
+
+
+# Get an instance of the logger
+LOGGER = logging.getLogger(__package__)
+
+# Instantiate the JournaldLogHandler to hook into systemd
+JOURNALD_HANDLER = JournaldLogHandler()
+JOURNALD_HANDLER.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+
 
 def init_config(argv=None):
     """Initialize the configuration."""
@@ -40,12 +50,16 @@ def init_config(argv=None):
 
     args, remaining_argv = pre_argp.parse_known_args()
     ## FIXME: LogLEvel in config file is ignored
-    logging.basicConfig(level=args.log_level)
+    if args.log_level:
+        logging.basicConfig(level=args.log_level)
 
+    # Add the journald handler to the current logger
+    LOGGER.addHandler(JOURNALD_HANDLER)
+    LOGGER.setLevel(args.log_level)
     if args.config_file:
         config_file = args.config_file
         config = ConfigParser(os.environ, interpolation=ExtendedInterpolation())
-        logging.info("Reading configuration from %s" % (config_file))
+        LOGGER.info("Reading configuration from %s" % (config_file))
         config.read([config_file])
         # defaults.update(dict(config.items("GENERAL")))
 
@@ -56,5 +70,5 @@ def init_config(argv=None):
     argp.set_defaults(**defaults)
     ## argp.add_argument("--option")
     args, remaining_argv = argp.parse_known_args(remaining_argv)
-    logging.basicConfig(level=args.log_level)
+    # logging.basicConfig(level=args.log_level)
     return config, remaining_argv

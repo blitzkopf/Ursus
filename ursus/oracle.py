@@ -9,6 +9,9 @@ from getpass import getpass, getuser
 
 import oracledb
 
+LOGGER = logging.getLogger(__name__)
+
+
 object_type_map = {
     "PACKAGE BODY": "PACKAGE_BODY",
     "PACKAGE": "PACKAGE_SPEC",
@@ -24,7 +27,7 @@ object_type_map = {
 def rows_as_dicts(cursor):
     """Returns oracledb rows as dicts."""
     colnames = [i[0].lower() for i in cursor.description]
-    logging.debug("colnames:" + str(colnames))
+    LOGGER.debug("colnames:" + str(colnames))
     for row in cursor:
         yield dict(zip(colnames, row))
 
@@ -59,7 +62,11 @@ class DDLHandler:
         self.db_connect_string = config.get("DATABASE", "ConnectString")
         self.db_username = config.get("DATABASE", "Username")
         self.db_schema = config.get("DATABASE", "Schema")
-        self.db_password = config.get("DATABASE", "Password")
+        if os.environ.get("URSUS_PASSWORD_FILE"):
+            with open(os.environ.get("URSUS_PASSWORD_FILE")) as f:
+                self.db_password = f.read().strip()
+        else:
+            self.db_password = config.get("DATABASE", "Password")
 
         if not self.db_password:
             pw = getpass("Oracle password for %s:" % (self.db_username))
@@ -172,12 +179,12 @@ class DDLHandler:
         except oracledb.DatabaseError as ex:
             (error,) = ex.args
             if error.code == 25228:
-                logging.debug("Receive timeout!")
+                LOGGER.debug("Receive timeout!")
                 return
             else:
                 raise
 
-        logging.info(
+        LOGGER.info(
             "sysevent:%s, login_user:%s, os_user:%s owner:%s, name:%s, type:%s"
             % (
                 self.sysevent.getvalue(),
@@ -192,22 +199,22 @@ class DDLHandler:
             sql_text = (
                 self.sql_text.getvalue().read().rstrip("\0")
             )  ## Oracle adds a chr(0) to the CLOB for good measure.
-            logging.info("Statement:%s" % (sql_text))
+            LOGGER.info("Statement:%s" % (sql_text))
         except Exception as _ex:
-            logging.info("No SQL statement Collected")
-            logging.debug(traceback.format_exc())
+            LOGGER.info("No SQL statement Collected")
+            LOGGER.debug(traceback.format_exc())
         curs_schema_params = rc_schema_params.getvalue()
         rs_schema_params = []
         for row in rows_as_dicts(curs_schema_params):
             # print(row)
             rs_schema_params.append(_SchemaParams(row))
-        logging.debug("Schema Params1:" + pprint.pformat(rs_schema_params))
+        LOGGER.debug("Schema Params1:" + pprint.pformat(rs_schema_params))
         try:
             schema_params = rs_schema_params[0]
         except IndexError:
             schema_params = None
 
-        logging.debug("Schema Params:" + pprint.pformat(schema_params))
+        LOGGER.debug("Schema Params:" + pprint.pformat(schema_params))
 
         return _DDLEvent(
             {
@@ -229,7 +236,7 @@ class DDLHandler:
 
     def get_source(self, schema, object_name, object_type):
         """Return source for object."""
-        logging.debug("Getting source for %s.%s : %s" % (object_type, schema, object_name))
+        LOGGER.debug("Getting source for %s.%s : %s" % (object_type, schema, object_name))
         src = self.src_cur.var(oracledb.CLOB)
         self.src_cur.execute(
             None,
@@ -244,7 +251,7 @@ class DDLHandler:
 
     def map(self, map_name, key, default_value):
         """Return mapped value."""
-        logging.debug("Mapping  %s -> %s " % (map_name, key))
+        LOGGER.debug("Mapping  %s -> %s " % (map_name, key))
         self.map_cur.execute(
             None, {"res": self.map_result, "map_name": map_name, "key": key, "default_value": default_value}
         )
@@ -312,7 +319,7 @@ class DDLHandler:
         for row in rows_as_dicts(curs_schema_params):
             # print(row)
             rs_schema_params.append(_SchemaParams(row))
-        logging.debug("Schema Params1:" + pprint.pformat(rs_schema_params))
+        LOGGER.debug("Schema Params1:" + pprint.pformat(rs_schema_params))
         try:
             schema_params = rs_schema_params[0]
         except IndexError:
@@ -348,7 +355,7 @@ class DDLHandler:
         for row in rows_as_dicts(rc_schema_params.getvalue()):
             # print(row)
             rs_schema_params.append(_SchemaParams(row))
-        logging.debug("Schema Params1:" + pprint.pformat(rs_schema_params))
+        LOGGER.debug("Schema Params1:" + pprint.pformat(rs_schema_params))
         schema_params = rs_schema_params[0]
         return schema_params
 
@@ -406,7 +413,7 @@ class DDLHandler:
 
     def is_constraint_index(self, schema, object_name, object_type):
         """Return 1 if object is an indexe used to enforce constraint, otherwise return 0."""
-        logging.debug("Getting index info for %s.%s : %s" % (object_type, schema, object_name))
+        LOGGER.debug("Getting index info for %s.%s : %s" % (object_type, schema, object_name))
         is_constraint_index = self.cons_ind_cur.var(oracledb.NUMBER)
         self.cons_ind_cur.execute(
             None,
