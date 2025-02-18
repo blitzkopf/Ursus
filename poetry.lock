@@ -148,6 +148,28 @@ test = ["certifi (>=2024)", "cryptography-vectors (==44.0.1)", "pretend (>=0.7)"
 test-randomorder = ["pytest-randomly"]
 
 [[package]]
+name = "cysystemd"
+version = "2.0.1"
+description = "systemd wrapper in Cython"
+optional = false
+python-versions = "<4,>3.6"
+files = [
+    {file = "cysystemd-2.0.1-cp310-cp310-manylinux_2_34_aarch64.whl", hash = "sha256:19a0b380622a11b42e7823e95a1f12312142d5a13d1b6e3cb400272e5aa3d07f"},
+    {file = "cysystemd-2.0.1-cp310-cp310-manylinux_2_34_x86_64.whl", hash = "sha256:d0aaaa11ca96e706b1a2fbe2e9ec1c3739583e00ed88dcd1d987663b7b519870"},
+    {file = "cysystemd-2.0.1-cp311-cp311-manylinux_2_34_aarch64.whl", hash = "sha256:8f50d7d4057406c4b30ae5604f061687fcaa7c5e541935c7b4817166c870fc11"},
+    {file = "cysystemd-2.0.1-cp311-cp311-manylinux_2_34_x86_64.whl", hash = "sha256:78dc5187193b2b959987e38c29d66e9fb625de5f93f2aec58eb7553aa504ed1d"},
+    {file = "cysystemd-2.0.1-cp312-cp312-manylinux_2_34_aarch64.whl", hash = "sha256:cd5543e1b1d96c5f327203506a46df96235e8b984cf0cfb4b85f0348975b7957"},
+    {file = "cysystemd-2.0.1-cp312-cp312-manylinux_2_34_x86_64.whl", hash = "sha256:39b03dcfced76957ede5f3f21956b5687a0511bdd1d0d41f2d3dffc9df32320d"},
+    {file = "cysystemd-2.0.1-cp313-cp313-manylinux_2_34_aarch64.whl", hash = "sha256:017b924d42ee92f6736714b78d51f81aded6b5f34e44dc7e2e92cbe2598e3611"},
+    {file = "cysystemd-2.0.1-cp313-cp313-manylinux_2_34_x86_64.whl", hash = "sha256:d9d89125cafee3cc0a898faf9fe53f9166ea6625393b75d606eef2901a8c3023"},
+    {file = "cysystemd-2.0.1-cp38-cp38-manylinux_2_34_aarch64.whl", hash = "sha256:b2dcd4f5788955787d08e43de1276cb5a6720e13e7fc6765aed4fe6fa3355144"},
+    {file = "cysystemd-2.0.1-cp38-cp38-manylinux_2_34_x86_64.whl", hash = "sha256:292f3f38b6fc6dc01a44c1053d8e2907ef857c09282fa904ed4742113eb36fdc"},
+    {file = "cysystemd-2.0.1-cp39-cp39-manylinux_2_34_aarch64.whl", hash = "sha256:ed55acd18bcc576a5b1af81ae59fb86042ee019b642f6cfed9221b963f05aeea"},
+    {file = "cysystemd-2.0.1-cp39-cp39-manylinux_2_34_x86_64.whl", hash = "sha256:0bb9b4380cb82202aeb5aedb5a6e63f257eac5d6192c24d054656e8329ab6cf0"},
+    {file = "cysystemd-2.0.1.tar.gz", hash = "sha256:632fe56264a18b7af3d1efd09125d6d5c1ec97d29ad6192c412ee43105821d61"},
+]
+
+[[package]]
 name = "lxml"
 version = "5.3.1"
 description = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API."
@@ -447,4 +469,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "a2418e2c078ff0a94db3155675f26364f40fbac60ac196a3481ef591bc5e23f2"
+content-hash = "7f3ae0f83d5be8a7366c19c20f675e91356bd00fcae543c7f3c52d7b4cd6f979"

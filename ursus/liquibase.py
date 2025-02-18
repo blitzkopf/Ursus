@@ -1,9 +1,11 @@
 """Module to generate liquibase changelog for Oracle database objects."""
 
-import re
+import logging
 
 import yaml
-from lxml import etree as ET
+from lxml import etree as et
+
+LOGGER = logging.getLogger(__name__)
 
 obj_type_map = {"INDEX": "index", "TABLE": "table", "PACKAGE": "package", "PACKAGE BODY": "packageBody"}
 
@@ -23,12 +25,13 @@ class Changelog:
         #          'xmlns':"http://www.liquibase.org/xml/ns/dbchangelog"},
         #          nsmap= {'xsi': "http://www.w3.org/2001/XMLSchema-instance" }
         #         )
-        # self.root.attrib['{http://www.w3.org/2001/XMLSchema-instance}schemaLocation']='http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd'
+        # self.root.attrib['{http://www.w3.org/2001/XMLSchema-instance}schemaLocation']=
+        # http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd'
 
     def read_changelog(self):
         if self.format == "xml":
             try:
-                tree = ET.parse(self.filename)
+                tree = et.parse(self.filename)
                 self.root = tree.getroot()
                 self.changesets = self.root.findall("changeSet")
             except IOError:
@@ -45,7 +48,7 @@ class Changelog:
 
     def write_changelog(self):
         if self.format == "xml":
-            tree = ET.ElementTree(self.root)
+            tree = et.ElementTree(self.root)
             # ET.register_namespace('', 'http://www.liquibase.org/xml/ns/dbchangelog')
 
             tree.write(self.filename, pretty_print=True)
@@ -57,6 +60,22 @@ class Changelog:
     def add_step_to_changelog(self, changeset):
         if not self.reset_file:
             self.read_changelog()
+            try:
+                # If the changeset is already in the changelog, don't add it again
+                # TODO: we are most likely going to hit a KeyError here
+
+                if (
+                    changeset["changeSet"].get("runOnChange", None)
+                    and changeset["changeSet"]["changes"][0]["sqlFile"]
+                    and changeset["changeSet"]["changes"][0]["sqlFile"]["path"]
+                    in [x["changeSet"]["changes"][0]["sqlFile"]["path"] for x in self.changesets]
+                ):
+                    return
+            except KeyError:
+                LOGGER.debug("KeyError in add_step_to_changelog most likely harmless")
+                LOGGER.debug("Changeset: %s", changeset)
+                LOGGER.debug("Changelog: %s", self.changesets)
+                pass
             self.changesets.append(changeset)
         if self.reset_file:
             self.changesets = [changeset]
@@ -96,9 +115,9 @@ class Changelog:
             )
         elif filename:
             if obj_type == "TABLE":
-                run_on_change = False
+                changeset["runOnChange"] = False
             else:
-                run_on_change = True
+                changeset["runOnChange"] = True
             changes.append(
                 {
                     "sqlFile": {
@@ -108,7 +127,6 @@ class Changelog:
                         "endDelimiter": delimiter,
                         "splitStatements": True,
                         "stripComments": False,
-                        "runOnChange": run_on_change,
                     }
                 }
             )

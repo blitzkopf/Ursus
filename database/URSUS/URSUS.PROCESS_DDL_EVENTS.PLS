@@ -60,7 +60,7 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
       l_buflen     NUMBER := 4000;
       l_curpos     NUMBER := 0;
   begin
-    if(p_obj_type = 'VIEW' ) then
+    /* if(p_obj_type = 'VIEW' ) then
         res := 'CREATE OR REPLACE FORCE VIEW '||p_obj_name||' ('||chr(10);
         for r in ( select column_name
           from SYS.dba_tab_cols
@@ -94,9 +94,9 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
         END IF;
         --return dummy;
         res := res || dummy || chr(10) || '/';
-    else
+    else */
       res := dbms_metadata.get_ddl(p_obj_type,p_obj_name,p_obj_owner);    
-    end if;
+    -- end if;
 
    return res;
   end;

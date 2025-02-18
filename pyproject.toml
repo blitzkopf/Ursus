@@ -11,6 +11,7 @@ oracledb = "^2.5.1"
 configparser = "^7.1.0"
 pyyaml = "^6.0.2"
 lxml = "^5.3.1"
+cysystemd = "^2.0.1"
 
 [tool.poetry.scripts]
 ursusd= "ursus.scripts.ursusd:main"

@@ -1,0 +1,15 @@
+[Unit]
+Description=Ursus Database Service
+After=network.target
+
+[Service]
+Type=idle
+Restart=on-failure
+User=ursus
+WorkingDirectory=/opt/ursus
+ExecStart=/opt/ursus/venv/bin/ursusd --config /etc/opt/ursus/ursusd.conf
+LoadCredential=ursus_password:/etc/opt/ursus/secret/ursus_password
+Environment=URSUS_PASSWORD_FILE=%d/ursus_password
+
+[Install]
+WantedBy=multi-user.target

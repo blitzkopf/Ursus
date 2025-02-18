@@ -18,7 +18,7 @@ import yaml
 
 from .liquibase import Changelog
 
-_LOG = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Builder(object):
@@ -283,20 +283,20 @@ class LiquibaseBuilder(Builder):
         files = []
         db_code_dir = schema_params.subdir
         changelog_filename = self.get_master_chlog_file(schema_params)
-        _LOG.debug("changelog file:{}".format(changelog_filename))
-        _LOG.debug("spooling files {}".format(os.getcwd()))
+        LOGGER.debug("changelog file:{}".format(changelog_filename))
+        LOGGER.debug("spooling files {}".format(os.getcwd()))
         for dirpath, _dirnames, filenames in os.walk(db_code_dir):  # do we need the subdir from filename_template?
             prefix = os.path.relpath(dirpath, db_code_dir)
-            _LOG.debug("path:{}".format(dirpath))
+            LOGGER.debug("path:{}".format(dirpath))
             for file in filenames:
                 relname = os.path.join(prefix, file)
-                _LOG.debug("file:{} ".format(relname))
+                LOGGER.debug("file:{} ".format(relname))
                 (basename, extension) = os.path.splitext(relname)
                 if dirpath == db_code_dir and file == "Changelog.yaml":
                     continue
                 if extension == ".yaml":
                     pri = pri_dict.get(basename, 0)
-                    _LOG.debug("file:{} priority:{}".format(relname, pri))
+                    LOGGER.debug("file:{} priority:{}".format(relname, pri))
                     files.append({"filename": relname, "priority": pri})
         includes = []
         for file in sorted(files, key=lambda f: f["priority"]):
@@ -304,5 +304,5 @@ class LiquibaseBuilder(Builder):
 
         with open(changelog_filename, "w") as f:
             f.write(yaml.dump({"databaseChangeLog": includes}))
-
+        subprocess.call(["git", "stage", changelog_filename])
         super(LiquibaseBuilder, self).commit(owner, schema_params, message, author)
