@@ -69,6 +69,9 @@ Commands:
         for rec in ddl_handler.list_schema_objects(args.schema):
             print(rec)
             builder.create(rec)
+            # Add object grants for each object
+            rec.obj_type = "OBJECT PRIVILEGE"
+            builder.grant_revoke(rec)
         builder.commit(
             args.schema, schema_params, "Initial commit from DB", "%s <%s@%s>" % ("URSUS", "ursus", self.email_domain)
         )

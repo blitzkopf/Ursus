@@ -123,6 +123,17 @@ class DDLHandler:
             % (self.db_schema)
         )
 
+        self.grants_cur = self.con.cursor()
+
+        self.grants_cur.prepare(
+            """
+
+                    begin :res := %s.process_ddl_events.get_obj_grants(:object_owner,:object_name); end;
+
+                    """
+            % (self.db_schema)
+        )
+
         self.map_cur = self.con.cursor()
 
         self.map_result = self.map_cur.var(oracledb.STRING)
@@ -248,6 +259,20 @@ class DDLHandler:
             },
         )
         return src
+
+    def get_grants(self, schema, object_name, object_type):
+        """Return source for object."""
+        LOGGER.debug("Getting source for %s.%s : %s" % (object_type, schema, object_name))
+        grants = self.grants_cur.var(oracledb.CLOB)
+        self.grants_cur.execute(
+            None,
+            {
+                "res": grants,
+                "object_name": object_name,
+                "object_owner": schema,
+            },
+        )
+        return grants.getvalue().read()
 
     def map(self, map_name, key, default_value):
         """Return mapped value."""
