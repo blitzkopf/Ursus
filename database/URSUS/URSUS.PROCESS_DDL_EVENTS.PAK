@@ -1,10 +1,18 @@
 CREATE OR REPLACE PACKAGE PROCESS_DDL_EVENTS authid current_user AS
+/*
+In stored procedures, functions, and definers-rights packages, roles (such as SELECT_CATALOG_ROLE) are disabled. 
+Therefore, such a PL/SQL program can only fetch metadata for objects in its own schema. 
+If you want to write a PL/SQL program that fetches metadata for objects in a different schema 
+(based on the invoker's possession of SELECT_CATALOG_ROLE), you must make the program invokers-rights.
+*/
 
   procedure recv( sysevent out VARCHAR2,login_user out VARCHAR2,os_user out VARCHAR2,instance_num out NUMBER,database_name out VARCHAR2,
     obj_owner out VARCHAR, obj_name out VARCHAR, obj_type out VARCHAR,obj_status out varchar2, sql_text out CLOB, rc_schema_params out sys_refcursor ,wait_time number default null);
 
   function get_ddl(p_obj_owner varchar2,p_obj_name varchar2, p_obj_type varchar2) return CLOB;
 
+  function get_obj_grants(p_obj_owner varchar2,p_obj_name varchar2) return CLOB;
+  
   function map(p_map_name varchar2, p_key varchar2,p_default_value varchar2 default null) return varchar2;
 
   procedure get_depend_priority(p_obj_owner varchar2, p_map1 varchar2, p_map2 varchar2, rc out sys_refcursor);

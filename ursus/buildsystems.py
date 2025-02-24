@@ -118,6 +118,37 @@ class Builder(object):
 
         subprocess.call(["git", "rm", fullname])
 
+    def grant_revoke(self, event_data):
+        """Generate a file for object GRANT statements."""
+        fullname, myrepo = self.get_fullname_repodir(event_data)
+        dir = os.path.dirname(fullname)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        ##if not os.path.isdir(dir):
+        ##    raise
+
+        logging.info("committing file " + fullname)
+
+        os.chdir(myrepo)
+        try:
+            with open(fullname, "w") as f:
+                try:
+                    grants = self.ddl_handler.get_grants(event_data.obj_owner, event_data.obj_name, event_data.obj_type)
+                    f.write(grants)
+                except oracledb.DatabaseError as e:
+                    (oerr,) = e.args
+                    if oerr.code == 31608:
+                        logging.info(event_data.obj_name + " no grants found")
+                        # os.remove(fullname) # maybe we should remove the file from git, leaving it empty for now
+                    else:
+                        raise
+            subprocess.call(["git", "stage", fullname])
+        except oracledb.DatabaseError as e:
+            (oerr,) = e.args
+            logging.error("ORA-" + str(oerr.code) + " " + event_data.obj_type + " " + (event_data.obj_name[:6]))
+            raise
+        return fullname
+
     def prepare_pri_file(self, owner, schema_params):
         """Prepare the priority file for the schema.
 

@@ -12,6 +12,8 @@ Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('sqlnav','INDEX','IDX');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('sqlnav','SEQUENCE','SEQ');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('sqlnav','JOB','JOB');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('sqlnav','TRIGGER','TRI');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('sqlnav','OBJECT PRIVILEGE','grants.SQL');
+
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','PACKAGE','PAK');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','PACKAGE BODY','PLS');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','VIEW','VIW');
@@ -26,6 +28,7 @@ Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','JOB','JOB');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','TRIGGER','TRI');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','MATERIALIZED VIEW','MVW');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','SNAPSHOT','MVW');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('ursus','OBJECT PRIVILEGE','grants.SQL');
 
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','PACKAGE','package');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','PACKAGE BODY','packagebody');
@@ -41,4 +44,5 @@ Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','JOB','job');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','TRIGGER','trigger');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','MATERIALIZED VIEW','matview');
 Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','SNAPSHOT','matview');
+Insert into URSUS.MAPS (MAP_NAME,KEY,VALUE) values ('liquibase','OBJECT PRIVILEGE','grants');
 commit;

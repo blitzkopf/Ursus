@@ -37,6 +37,8 @@ def deal_with_it(builder, event_data, commit_scheduler, email_domain):
         builder.drop(event_data)
     elif event_data.sysevent == "ALTER" and event_data.obj_type == "TABLE":
         builder.alter(event_data)
+    elif event_data.obj_type == "OBJECT PRIVILEGE":
+        builder.grant_revoke(event_data)
     elif event_data.sysevent == "GIT_COMMIT":
         manual_commit(builder, event_data, commit_scheduler, email_domain)
         return

@@ -101,6 +101,12 @@ CREATE OR REPLACE PACKAGE BODY PROCESS_DDL_EVENTS AS
    return res;
   end;
 
+  function get_obj_grants(p_obj_owner varchar2,p_obj_name varchar2) return CLOB
+  as
+  begin
+    return dbms_metadata.get_dependent_ddl('OBJECT_GRANT',p_obj_name,p_obj_owner);
+  end;
+
   function map(p_map_name varchar2, p_key varchar2,p_default_value varchar2 default null) return varchar2
   as
     result varchar2(50);
