@@ -1,7 +1,7 @@
-create user ursus identified by &&password
+create user ursus identified by "&&password"
   QUOTA UNLIMITED ON users
   default tablespace users;
-
+	
 grant connect to ursus;
 grant resource to ursus;
 

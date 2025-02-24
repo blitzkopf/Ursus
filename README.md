@@ -12,8 +12,8 @@ Create a config file
     # Email domain used for author email address of commit
     EmailDomain = mydomain.com
     [GIT]
-    # the directory where the system keeps it repos (/tmp is a really bad choice)
-    RepoDirectory = /tmp/repos
+    # the directory where the system keeps it repos
+    RepoDirectory = /var/opt/ursus/repos
     # the branch name used for DB code
     Branch = ursus
     [DATABASE]
