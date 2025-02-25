@@ -73,11 +73,11 @@ def main():
     bobcatbuilder = ursus.BobcatBuilder(config, ddl_handler, git_handler)
     liquibasebuilder = ursus.LiquibaseBuilder(config, ddl_handler, git_handler)
     commit_scheduler = ursus.CommitScheduler()
-    cysystemd.daemon.notify(cysystemd.daemon.Notification.READY)
+    # cysystemd.daemon.notify(cysystemd.daemon.Notification.READY)
     """Main loop for the daemon, listens for AQ events and processes them."""
     while True:
         event_data = ddl_handler.recv_next()
-        LOGGER.debug("event_data" + pprint.pformat(event_data))
+        LOGGER.debug("event_data:" + pprint.pformat(event_data))
         if event_data and event_data.schema_params is not None:
             if event_data.schema_params.build_system == "bobcat":
                 builder = bobcatbuilder

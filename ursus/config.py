@@ -8,7 +8,6 @@ from configparser import ConfigParser, ExtendedInterpolation
 
 from cysystemd.journal import JournaldLogHandler
 
-
 # Get an instance of the logger
 LOGGER = logging.getLogger(__package__)
 
@@ -44,7 +43,6 @@ def init_config(argv=None):
         nargs="?",
         dest="log_level",
         const="INFO",
-        default=defaults["LogLevel"],
         type=str.upper,
     )
 
@@ -55,14 +53,14 @@ def init_config(argv=None):
 
     # Add the journald handler to the current logger
     LOGGER.addHandler(JOURNALD_HANDLER)
-    LOGGER.setLevel(args.log_level)
     if args.config_file:
         config_file = args.config_file
         config = ConfigParser(os.environ, interpolation=ExtendedInterpolation())
         LOGGER.info("Reading configuration from %s" % (config_file))
         config.read([config_file])
         # defaults.update(dict(config.items("GENERAL")))
-
+    if config.get("GENERAL", "LogLevel") and not args.log_level:
+        LOGGER.setLevel(config.get("GENERAL", "LogLevel"))
     argp = argparse.ArgumentParser(
         # Inherit options from config_parser
         parents=[pre_argp]
