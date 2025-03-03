@@ -37,7 +37,7 @@ class CommitScheduler:
                 "author": author,
             }
 
-        elif scheduler == "inactive" or (scheduler == "interval" and not self.commit_queue[schema]):
+        elif scheduler == "inactive" or (scheduler == "interval" and schema not in self.commit_queue):
             if is_valid:
                 self.commit_queue[schema] = {
                     "commit_time": time.time() + schema_params.valid_timeout,
@@ -54,7 +54,7 @@ class CommitScheduler:
                     "message": message,
                     "author": author,
                 }
-        elif scheduler == "manual" or (scheduler == "interval" and self.commit_queue[schema]):
+        elif scheduler == "manual" or (scheduler == "interval" and schema not in self.commit_queue):
             pass
         else:
             raise Exception("Unknown commit scheduler")
